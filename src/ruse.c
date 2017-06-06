@@ -1,4 +1,4 @@
-/* memuse - show memory usage and wall-clock time for a process
+/* ruse - show memory usage and wall-clock time for a process
  *
  * 2017 Jan Moren
  *
