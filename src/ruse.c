@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <math.h>
 #include <time.h>
+#include <stdbool.h>
 
 #include "proc.h"
 
@@ -68,6 +69,8 @@ main(int argc, char *argv[])
     sigset_t mask;
     sigset_t old_mask;
 
+    get_all_pids();
+    exit(0);
     syspagesize = getpagesize()/KB;
 
     /* block signals from the child until we're ready 
@@ -141,7 +144,7 @@ main(int argc, char *argv[])
 	printf("type: %s\n", strsignal(sigtype));
 
 	if (sigtype == SIG) {
-	    if (read_RSS(pid, &rss, &parent) == -1) {
+	    if (read_RSS(pid, &rss, &parent) == false) {
 		fprintf(stderr, "read_RSS failure\n");
 		exit(EXIT_FAILURE);
 	    }
