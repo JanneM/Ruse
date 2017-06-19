@@ -27,6 +27,7 @@
 
 /* Our defined timer */
 timer_t timerid;
+struct timespec tic, toc;
 
 /* get the signal ID out from the callback */
 volatile sig_atomic_t sigtype;
@@ -66,14 +67,11 @@ main(int argc, char *argv[])
     struct itimerspec its; 
     long int mem;
     long int rss = 0;
-    int parent = 0;
     sigset_t mask;
     sigset_t old_mask;
 
     syspagesize = getpagesize()/KB;
 
-    mem = get_RSS(1);
-    exit(0);
 
     /* block signals from the child until we're ready 
      * to receive them
@@ -130,8 +128,9 @@ main(int argc, char *argv[])
     }
 
     /* Start the timer */
-    its.it_value.tv_sec = 1;
-    its.it_value.tv_nsec = 0;
+    its.it_value.tv_sec = 0;
+    its.it_value.tv_nsec = 1e8;
+    //its.it_value.tv_nsec = 0;
     its.it_interval.tv_sec = its.it_value.tv_sec;
     its.it_interval.tv_nsec = its.it_value.tv_nsec;
     if (timer_settime(timerid, 0, &its, NULL) == -1){
@@ -143,14 +142,9 @@ main(int argc, char *argv[])
 
     while(1) {
 	sigsuspend(&old_mask);
-	printf("type: %s\n", strsignal(sigtype));
 
 	if (sigtype == SIG) {
-	    if (read_RSS(pid, &rss, &parent) == false) {
-		fprintf(stderr, "read_RSS failure\n");
-		exit(EXIT_FAILURE);
-	    }
-
+	    rss = get_RSS(pid);
 	    printf("mem: %li\n", rss);
 	    mem = MAX(mem, rss); 
 

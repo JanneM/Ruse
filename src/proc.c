@@ -7,7 +7,6 @@
 
 int syspagesize=0;
 
-
 typedef struct {
     int pid;
     int parent;
@@ -32,8 +31,9 @@ read_RSS(int pid, long int *rss, int *parent) {
     }
     
     f = fopen(fname, "r");
+    
+    // pids may disappear. This is not an error
     if (!f) {
-	fprintf(stderr, "Failed to open '%s': %s\n", fname, strerror(errno));
 	return false;
     }
 
@@ -49,7 +49,15 @@ read_RSS(int pid, long int *rss, int *parent) {
 	switch(i) {
 	    case 3:	// parent
 		res = sscanf(field, "%i", parent);
+		
+		// ignore kernel processes
+		if (*parent == 2) {
+		    fclose(f);
+		    return false;
+		}
+		    
 		continue;
+
 	    case 23:	// rss
 		res = sscanf(field, "%li", rss);
 		continue;
@@ -62,8 +70,9 @@ read_RSS(int pid, long int *rss, int *parent) {
 
     if(line)
 	free(line);
-    
-    *rss = (*rss)*syspagesize;
+
+    fclose(f);    
+    *rss  *= syspagesize;
     return true;
 }
 
@@ -92,16 +101,12 @@ get_all_pids() {
 	}
 	
 	/* any entry in /proc that begins with a digit is _probably_ a pid.
-	 * But I've not seen a formal guarantee, so let's play it safe 
-	*/
-	 
-	// begins with a digit? 
+	 * But I've not seen a formal guarantee, so let's play it safe. */
 	if ((dir->d_name[0]<'0') || (dir->d_name[0]>'9')) {
 	    continue;
 	}
 
-	res = strtol(dir->d_name, &eptr, 10);
-	
+	res = strtoul(dir->d_name, &eptr, 10);
 	// not purely numeric, so not a pid
 	if (*eptr != '\0') {
 	    continue;
@@ -111,10 +116,6 @@ get_all_pids() {
 	    exit(EXIT_FAILURE);
         }
     }
-//    for (int i = 0; i<plist->len; i++) {
-//	printf("%d\n", plist->ilist[i]);
-//    }
-   
     return plist;
 }
 
@@ -124,8 +125,6 @@ get_all_procs(procdata *procs, iarr *plist) {
   
     int elems;
     int pidc, procc;
-    long int rss;
-    int parent;
     int pid;
 	
     elems = plist->len;
@@ -134,21 +133,26 @@ get_all_procs(procdata *procs, iarr *plist) {
     
     pidc = 0;
     procc = 0;
-    while (pidc<elems) {
+    for (pidc = 0; pidc<elems; pidc++) {
 	pid = plist->ilist[pidc];
-	read_RSS(pid, &rss, &parent);
-
-	// filter out kernel processes
-	if (parent != 2) {
+	if ((read_RSS(pid, &(procs[procc].rss), &(procs[procc].parent))) == true) {
 	    procs[procc].pid = pid;
-	    procs[procc].rss = rss;
-	    procs[procc].parent = parent;
-	    //printf("%d \t%ld \t%d\n", procs[procc].pid, procs[procc].rss,procs[procc].parent);
 	    procc++;
 	}
-	pidc++; 
     }
     return procc;
+}
+
+long int
+get_RSS_r(int pid, procdata *p, int l) {
+    
+    long int rss=0;
+    for (int i=0; i<l; i++) {
+	if (p[i].parent == pid) {
+	    rss += p[i].rss + get_RSS_r(p[i].pid, p, l);
+	}
+    }
+    return rss;
 }
 
 
@@ -158,10 +162,12 @@ get_RSS(int pid) {
     int elems;
     iarr *plist;
     procdata *procs;
+    long int rss = 0;
 
     if ((plist = get_all_pids()) == NULL) {
 	exit(EXIT_FAILURE);
     }
+
     if (plist->len < 1) {
 	fprintf(stderr, "failed to get process pid list.\n");
 	exit(EXIT_FAILURE);
@@ -173,10 +179,12 @@ get_RSS(int pid) {
     }
 
     elems = get_all_procs(procs, plist);
+    
     for (int i=0; i<elems; i++) {
-	printf("sdfsdfdsf %d \t%ld \t%d\n", procs[i].pid, procs[i].rss,procs[i].parent);
+	if (procs[i].pid == pid) {
+	    rss = procs[i].rss + get_RSS_r(pid, procs, elems);
+	    break;
+	}
     }
-    printf("total: %d \t elems: %d\n", plist->len, elems);
-
-    return 1;
+    return rss;
 }

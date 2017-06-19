@@ -12,8 +12,9 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdbool.h>
-
+#include <time.h>
 #include "arr.h"
+
 
 /* system page size, for calculating the memory use */
 extern int syspagesize;
