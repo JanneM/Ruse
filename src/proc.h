@@ -18,6 +18,11 @@
 /* system page size, for calculating the memory use */
 extern int syspagesize;
 
+typedef struct {
+    int pid;
+    int parent;
+    long int rss;
+} procdata;
 
 
 /* extract the current RSS (resident set size) and parent process if for
@@ -32,5 +37,11 @@ read_RSS(int pid, long int *rss, int *parent);
 iarr *
 get_all_pids();
 
+/* Get data on all current processes on the system, with kernel processes filtered away */
+int
+get_all_procs(procdata *procs, iarr *plist);
 
+/* Get total RSS for process tree rooted in pid */
+long int
+get_RSS(int pid);
 

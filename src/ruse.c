@@ -59,6 +59,7 @@ sighandler(int signal, siginfo_t *siginfo, void *uc) {
 int 
 main(int argc, char *argv[])
 {
+    
     time_t t1,t2;
     struct sigaction sa_time, sa_chld;
     struct sigevent sev;
@@ -69,9 +70,10 @@ main(int argc, char *argv[])
     sigset_t mask;
     sigset_t old_mask;
 
-    get_all_pids();
-    exit(0);
     syspagesize = getpagesize()/KB;
+
+    mem = get_RSS(1);
+    exit(0);
 
     /* block signals from the child until we're ready 
      * to receive them

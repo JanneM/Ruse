@@ -111,12 +111,72 @@ get_all_pids() {
 	    exit(EXIT_FAILURE);
         }
     }
-    for (int i = 0; i<plist->len; i++) {
-	printf("%d\n", plist->ilist[i]);
-    }
+//    for (int i = 0; i<plist->len; i++) {
+//	printf("%d\n", plist->ilist[i]);
+//    }
    
     return plist;
 }
 
 
+int
+get_all_procs(procdata *procs, iarr *plist) {
+  
+    int elems;
+    int pidc, procc;
+    long int rss;
+    int parent;
+    int pid;
+	
+    elems = plist->len;
 
+    // look up, fill in data for all procs
+    
+    pidc = 0;
+    procc = 0;
+    while (pidc<elems) {
+	pid = plist->ilist[pidc];
+	read_RSS(pid, &rss, &parent);
+
+	// filter out kernel processes
+	if (parent != 2) {
+	    procs[procc].pid = pid;
+	    procs[procc].rss = rss;
+	    procs[procc].parent = parent;
+	    //printf("%d \t%ld \t%d\n", procs[procc].pid, procs[procc].rss,procs[procc].parent);
+	    procc++;
+	}
+	pidc++; 
+    }
+    return procc;
+}
+
+
+long int
+get_RSS(int pid) {
+
+    int elems;
+    iarr *plist;
+    procdata *procs;
+
+    if ((plist = get_all_pids()) == NULL) {
+	exit(EXIT_FAILURE);
+    }
+    if (plist->len < 1) {
+	fprintf(stderr, "failed to get process pid list.\n");
+	exit(EXIT_FAILURE);
+    }
+
+    if ((procs = calloc(plist->len, sizeof(procdata))) == NULL) {
+	perror("get_all_procs");
+	exit(EXIT_FAILURE);
+    }
+
+    elems = get_all_procs(procs, plist);
+    for (int i=0; i<elems; i++) {
+	printf("sdfsdfdsf %d \t%ld \t%d\n", procs[i].pid, procs[i].rss,procs[i].parent);
+    }
+    printf("total: %d \t elems: %d\n", plist->len, elems);
+
+    return 1;
+}
