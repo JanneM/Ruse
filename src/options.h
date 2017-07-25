@@ -1,4 +1,6 @@
-/* arr.h - implement an array type for pid list 
+/* options.h
+ *
+ * Parse user options.
  *
  * Copyright 2017 Jan Moren
  *
@@ -18,25 +20,22 @@
  * along with Ruse.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef struct {
-    unsigned int anr;   // number of allocated elements
-    unsigned int len;	// current number of elements
-    int *ilist;
-} iarr;
-
-/* Create a new iarr instance. nr is the initial size */
-iarr*
-iarr_create(unsigned int nr);
+    bool verbose;
+    int time;
+    char *label;
+    bool nohead;
+} options;
 
 
-/* Insert value 'val'. true on success. */
-bool
-iarr_insert(iarr* arr, int val);
+/* Get and parse user options. Return an options struct, and index to the first non-option argument in argv.
+ */
 
-
-/* deallocate the iarr structure */
-void
-iarr_delete(iarr *arr);
-
+options*
+get_options(int *argc, char **argv[]);

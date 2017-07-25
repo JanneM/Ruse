@@ -1,8 +1,23 @@
 /* proc.c - helper functions for the /proc filesystem
  *
- * 2017 Jan Moren
+ * Copyright 2017 Jan Moren
  *
+ * This file is part of Ruse.
+ *
+ * Ruse is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Ruse is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Ruse.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include "proc.h"
 
 int syspagesize=0;
@@ -48,23 +63,17 @@ read_RSS(int pid, long int *rss, int *parent) {
 	field = strsep(&line_tmp, " ");
 	switch(i) {
 	    case 3:	// parent
-		res = sscanf(field, "%i", parent);
+		*parent = atol(field);
 		
 		// ignore kernel processes
 		if (*parent == 2) {
 		    fclose(f);
 		    return false;
 		}
-		    
 		continue;
-
 	    case 23:	// rss
-		res = sscanf(field, "%li", rss);
+		*rss = atol(field);
 		continue;
-	}
-	if (res == EOF) {
-	    fprintf(stderr, "Failed to scan '%s': %s\n", fname, strerror(errno));
-	    return false;
 	}
     }
 
@@ -82,7 +91,6 @@ get_all_pids() {
     DIR *df;
     struct dirent *dir;
     long int res;
-    char *eptr;
     iarr *plist;
 
     if ((df = opendir("/proc")) == NULL){
@@ -101,16 +109,12 @@ get_all_pids() {
 	}
 	
 	/* any entry in /proc that begins with a digit is _probably_ a pid.
-	 * But I've not seen a formal guarantee, so let's play it safe. */
+	 * If it's not, looking up the data will fail and we'll just skip it,
+	 * so no harm done. */
 	if ((dir->d_name[0]<'0') || (dir->d_name[0]>'9')) {
 	    continue;
 	}
-
-	res = strtoul(dir->d_name, &eptr, 10);
-	// not purely numeric, so not a pid
-	if (*eptr != '\0') {
-	    continue;
-	}
+	res = atol(dir->d_name);
 	
 	if (iarr_insert(plist, (int)res) == false) {
 	    exit(EXIT_FAILURE);
