@@ -156,7 +156,7 @@ main(int argc, char *argv[])
     pid_t pid = fork();
     if (pid < 0)
     {
-	fprint(stderr,"fork failed");
+	fprintf(stderr,"fork failed");
 	return EXIT_FAILURE;
     }
     if (pid == 0)

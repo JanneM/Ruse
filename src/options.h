@@ -28,9 +28,12 @@
 
 typedef struct {
     bool verbose;
+    bool steps;
     int time;
     char *label;
+    bool nofile;
     bool nohead;
+    bool nosum;
 } options;
 
 

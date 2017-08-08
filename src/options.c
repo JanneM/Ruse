@@ -27,7 +27,23 @@
 
 void 
 show_help(const char *progname) {
-    printf("Usage: %s [-o file] [--help] command [arg...]", progname);
+    printf("Usage: %s [FLAGS] [--help] command [ARG...]\n", progname);
+    printf("\
+Measures the time and memory taken for a command process and \n\
+all its subprocesses. \n\
+\n\
+  -l, --label=LABEL      Prefix output with LABEL (default \n\
+                         'command')\n\
+      --stdout           Don't save to a file, but to stdout\n\
+      --no-header        Don't print a header line\n\
+      --no-summary       Don't print summary info\n\
+  -s, --steps            Print each sample step        \n\
+  -t, --time=SECONDS     Sample every SECONDS (default 30)\n\
+\n\
+      --help             Print help\n\
+  -v, --verbose          Verbose output\n\
+      --version          Display version\n\
+\n");
     exit(EXIT_SUCCESS);
 }
 
@@ -38,8 +54,11 @@ get_options(int *argc, char **argv[]) {
     options *opts = malloc(sizeof(options));
 
     opts->verbose = false;
+    opts->steps   = false;
     opts->time    = 30;
     opts->nohead  = false;
+    opts->nofile  = false;
+    opts->nosum   = false;
     opts->label  = (char *)calloc(32, sizeof(char));
 
     
@@ -49,14 +68,18 @@ get_options(int *argc, char **argv[]) {
 	int option_index = 0;
 	static struct option long_options[] = {
 	    {"verbose", no_argument,       0, 'v'},
-	    {"help",    no_argument,       0, 'h'},
+	    {"version", no_argument,       0,  1 },
+	    {"help",    no_argument,       0,  2 },
 	    {"label",   required_argument, 0, 'l'},
+	    {"step",    no_argument,       0, 's'},
 	    {"time",    required_argument, 0, 't'},
-	    {"no-header",no_argument,      0, 'n'},
+	    {"stdout",  no_argument,       0,  3 },
+	    {"no-header",no_argument,      0,  4 },
+	    {"no-summary",no_argument,     0,  5 },
 	    {0,         0,                 0,  0 }
 	};
 
-	c = getopt_long(*argc, *argv, "+vhl:t:n",
+	c = getopt_long(*argc, *argv, "+vhl:t:s",
 		long_options, &option_index);
 	if (c == -1)
 	    break;
@@ -67,7 +90,7 @@ get_options(int *argc, char **argv[]) {
 		opts->verbose = true;
 		break;
 	    
-	    case 'h':
+	    case 2:
 		show_help((**argv));
 		exit(EXIT_SUCCESS);
 		break;
@@ -76,16 +99,26 @@ get_options(int *argc, char **argv[]) {
 		strncpy(opts->label, optarg, 31);
 		break;
 
+	    case 's':
+		opts->steps = true;
+		break;
 	    case 't':
 		opts->time = atoi(optarg);
 		break;
 
-	    case 'n':
+	    case 3:
+		opts->nofile = true;
+		break;
+
+	    case 4:
 		opts->nohead = true;
 		break;
 
+	    case 5:
+		opts->nosum = true;
+		break;
 	    case '?':
-	    default:
+    default:
 		show_help((**argv));
 		exit(EXIT_FAILURE);
 		break;
