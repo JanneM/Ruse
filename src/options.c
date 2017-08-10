@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <libgen.h>
 #include "options.h"
 
 void 
@@ -134,7 +135,9 @@ get_options(int *argc, char **argv[]) {
     *argc = *argc - optind;
     *argv = (*argv)+optind; 
     if (strlen(opts->label) == 0) {
-	strncpy(opts->label, (*argv)[0] , 31);
+	char *bname =strdup((*argv)[0]);
+	strncpy(opts->label, basename(bname) , 31);
+	free(bname);
     }
     return opts;
 }
