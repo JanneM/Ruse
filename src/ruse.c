@@ -165,7 +165,11 @@ main(int argc, char *argv[])
 
     /* We're the parent */
 
-    set_signals(1);
+    mem = get_RSS(pid);
+    print_header(opts);
+    print_steps(opts, mem, 0); 
+
+    set_signals(opts->time);
 
     while(1) {
 	sigsuspend(&old_mask);
