@@ -18,6 +18,8 @@
  * along with Ruse.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef ARR_H
+#define ARR_H
 #include <stdbool.h>
 
 typedef struct {
@@ -40,3 +42,4 @@ iarr_insert(iarr* arr, int val);
 void
 iarr_delete(iarr *arr);
 
+#endif

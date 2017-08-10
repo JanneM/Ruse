@@ -18,6 +18,9 @@
  * along with Ruse.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+#ifndef PROC_H
+#define PROC_H
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,3 +63,4 @@ get_all_procs(procdata *procs, iarr *plist);
 size_t
 get_RSS(int pid);
 
+#endif

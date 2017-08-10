@@ -20,6 +20,8 @@
  * along with Ruse.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef OPTIONS_H
+#define OPTIONS_H
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -42,3 +44,5 @@ typedef struct {
 
 options*
 get_options(int *argc, char **argv[]);
+
+#endif
