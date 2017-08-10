@@ -128,10 +128,11 @@ main(int argc, char *argv[])
 {
     
     time_t t1,t2;
-    long int mem = 0;
-    long int rss = 0;
+    size_t mem = 0;
+    size_t rssmem = 0;
     sigset_t mask;
     sigset_t old_mask;
+
 
     syspagesize = getpagesize()/KB;
 
@@ -143,12 +144,7 @@ main(int argc, char *argv[])
     sigaddset(&mask, SIGCHLD);
     sigprocmask(SIG_BLOCK, &mask, &old_mask);
 
-    printf("1: %d\t %s\n", argc, argv[0]);
     options *opts = get_options(&argc, &argv);
-    printf("2: %d\t %s\n", argc, argv[0]);
-    
-    printf("opts:\n=====\nlabel: %s\nheader: %d\n",opts->label, (int)(opts->nohead));
-    exit(0);
 
     /* Time the process*/
     time(&t1);

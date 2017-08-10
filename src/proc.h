@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <error.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdbool.h>
@@ -35,7 +36,7 @@ extern int syspagesize;
 typedef struct {
     int pid;
     int parent;
-    long int rss;
+    size_t rss;
 } procdata;
 
 
@@ -44,7 +45,7 @@ typedef struct {
 */
 
 bool
-read_RSS(int pid, long int *rss, int *parent);
+read_RSS(int pid, size_t *rss, int *parent);
 
 /* get all process pids on the system */
 
@@ -56,6 +57,6 @@ int
 get_all_procs(procdata *procs, iarr *plist);
 
 /* Get total RSS for process tree rooted in pid */
-long int
+size_t
 get_RSS(int pid);
 

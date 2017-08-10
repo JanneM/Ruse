@@ -22,14 +22,8 @@
 
 int syspagesize=0;
 
-typedef struct {
-    int pid;
-    int parent;
-    long int rss;
-} procstr;
-
 bool
-read_RSS(int pid, long int *rss, int *parent) {
+read_RSS(int pid, size_t *rss, int *parent) {
 
     int i;
     int res;
@@ -90,7 +84,7 @@ get_all_pids() {
     
     DIR *df;
     struct dirent *dir;
-    long int res;
+    size_t res;
     iarr *plist;
 
     if ((df = opendir("/proc")) == NULL){
@@ -147,10 +141,10 @@ get_all_procs(procdata *procs, iarr *plist) {
     return procc;
 }
 
-long int
+size_t
 get_RSS_r(int pid, procdata *p, int l) {
     
-    long int rss=0;
+    size_t rss=0;
     for (int i=0; i<l; i++) {
 	if (p[i].parent == pid) {
 	    rss += p[i].rss + get_RSS_r(p[i].pid, p, l);
@@ -160,13 +154,13 @@ get_RSS_r(int pid, procdata *p, int l) {
 }
 
 
-long int
+size_t
 get_RSS(int pid) {
 
     int elems;
     iarr *plist;
     procdata *procs;
-    long int rss = 0;
+    size_t rss = 0;
 
     if ((plist = get_all_pids()) == NULL) {
 	exit(EXIT_FAILURE);
@@ -183,7 +177,6 @@ get_RSS(int pid) {
     }
 
     elems = get_all_procs(procs, plist);
-    
     for (int i=0; i<elems; i++) {
 	if (procs[i].pid == pid) {
 	    rss = procs[i].rss + get_RSS_r(pid, procs, elems);
