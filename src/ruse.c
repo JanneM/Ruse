@@ -35,6 +35,7 @@
 
 #include "proc.h"
 #include "options.h"
+#include "output.h"
 
 #define KB 1024
 #define MAX(x,y) ((x) > (y) ? (x): (y))
@@ -175,13 +176,20 @@ main(int argc, char *argv[])
 	sigsuspend(&old_mask);
 
 	if (sigtype == SIG) {
-	        clock_gettime(CLOCK_REALTIME, &tic);
+#ifdef DEBUG
+	    clock_gettime(CLOCK_REALTIME, &tic);
+#endif
+	    rssmem = get_RSS(pid);
+#ifdef DEBUG    
+	    clock_gettime(CLOCK_REALTIME, &toc);
+	    printf("mem: %li %.2f \n", rssmem, time_diff_micro(&toc, &tic)/1000.0);
+#endif
+	    mem = MAX(mem, rssmem); 
 
-	    rss = get_RSS(pid);
-	        clock_gettime(CLOCK_REALTIME, &toc);
-
-	    printf("mem: %li %.2f \n", rss, time_diff_micro(&toc, &tic)/1000.0);
-	    mem = MAX(mem, rss); 
+	    if (opts->steps) {
+		time(&t2);
+		print_steps(opts, rssmem, (t2-t1)); 
+	    }
 
 	} else if (sigtype == SIGCHLD) {
 	    break;	
@@ -189,9 +197,13 @@ main(int argc, char *argv[])
     }
 
     time(&t2);
+    long int runtime = (t2-t1);
     int status;
     waitpid(pid, &status, 0);
-    printf("Mem(MB): %li\nTime(s): %li\n", mem, (t2-t1));
+    if (!opts->nosum) {
+	print_summary(opts, mem, runtime);
+    }
+//    printf("Mem(MB): %li\nTime(s): %li\n", mem, runtime);
 
     return EXIT_SUCCESS;
 }
