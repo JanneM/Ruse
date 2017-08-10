@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <error.h>
 #include <math.h>
 #include <time.h>
 #include <stdbool.h>
@@ -152,8 +153,7 @@ main(int argc, char *argv[])
     pid_t pid = fork();
     if (pid < 0)
     {
-	fprintf(stderr,"fork failed");
-	return EXIT_FAILURE;
+	error(EXIT_FAILURE, 0, "fork failed");
     }
     if (pid == 0)
     {

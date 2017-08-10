@@ -89,11 +89,12 @@ get_all_pids() {
 
     if ((df = opendir("/proc")) == NULL){
 	perror("get_all_pids:");
+	// Should we possibly not fail here?
 	exit(EXIT_FAILURE);
     }
     
     if ((plist = iarr_create(4)) == NULL) {
-	exit(EXIT_FAILURE);
+	error(EXIT_FAILURE, 0, "failed to create PID list container");
     }
 
     while ((dir = readdir(df)) != NULL) {
@@ -111,7 +112,7 @@ get_all_pids() {
 	res = atol(dir->d_name);
 	
 	if (iarr_insert(plist, (int)res) == false) {
-	    exit(EXIT_FAILURE);
+	    error(EXIT_FAILURE, 0, "failed to insert into PID list container");
         }
     }
     return plist;
@@ -163,12 +164,11 @@ get_RSS(int pid) {
     size_t rss = 0;
 
     if ((plist = get_all_pids()) == NULL) {
-	exit(EXIT_FAILURE);
+	exit(EXIT_FAILURE); // should be caught in get_all_pids
     }
 
     if (plist->len < 1) {
-	fprintf(stderr, "failed to get process pid list.\n");
-	exit(EXIT_FAILURE);
+	error(EXIT_FAILURE, 0, "failed to get process pid list.\n");
     }
 
     if ((procs = calloc(plist->len, sizeof(procdata))) == NULL) {
