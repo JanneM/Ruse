@@ -204,6 +204,9 @@ main(int argc, char *argv[])
     if (!opts->nosum) {
 	print_summary(opts, mem, runtime);
     }
+    if (!opts->nofile) {
+	fclose(opts->fhandle);
+    }
 //    printf("Mem(MB): %li\nTime(s): %li\n", mem, runtime);
 
     return EXIT_SUCCESS;

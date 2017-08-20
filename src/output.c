@@ -28,6 +28,7 @@ print_steps(options *opts, size_t memory, int ts) {
     if (opts->steps) {
 	fprintf(opts->fhandle, "%-9d %.1f\n", ts, ((double)memory)/1024.0);
     }
+    fflush(opts->fhandle);
 }
 
 void

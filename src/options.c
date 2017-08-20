@@ -106,7 +106,7 @@ get_options(int *argc, char **argv[]) {
 		    show_help((**argv));
 		    exit(EXIT_FAILURE);
 		}
-
+		break;
 	    case 3:
 		opts->nofile = true;
 		break;
