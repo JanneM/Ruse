@@ -42,11 +42,12 @@
 #define CLOCKID CLOCK_REALTIME
 #define SIG SIGUSR1
 
+#ifdef DEBUG
 double time_diff_micro(struct timespec *toc, struct timespec *tic) {
     return (1e6*(toc->tv_sec-tic->tv_sec)+
 	    (toc->tv_nsec-tic->tv_nsec)/1e3);
 }
-
+#endif
 
 /* Our defined timer */
 timer_t timerid;
@@ -182,7 +183,7 @@ main(int argc, char *argv[])
 	    rssmem = get_RSS(pid);
 #ifdef DEBUG    
 	    clock_gettime(CLOCK_REALTIME, &toc);
-	    printf("mem: %li %.2f \n", rssmem, time_diff_micro(&toc, &tic)/1000.0);
+	    printf("mem: %li %.2fms\n", rssmem, time_diff_micro(&toc, &tic)/1000.0);
 #endif
 	    mem = MAX(mem, rssmem); 
 
