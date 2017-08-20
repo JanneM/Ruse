@@ -25,6 +25,7 @@ m4
 missing
 stamp-h1
 *~
+.*sw?
 *.html
 *.log
 *.o
@@ -36,6 +37,7 @@ stamp-h1
 *.zip
 *.lo
 *.log
+
 
 build/
 
