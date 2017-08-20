@@ -19,9 +19,6 @@
  */
 
 #include "arr.h"
-#include <stdlib.h>
-#include <errno.h>
-#include <stdio.h>
 
 /* Create a new iarr instance. elems is the initial size. NULL on failure. */
 iarr*

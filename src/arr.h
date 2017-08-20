@@ -21,6 +21,9 @@
 #ifndef ARR_H
 #define ARR_H
 #include <stdbool.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <stdio.h>
 
 typedef struct {
     unsigned int anr;   // number of allocated elements
