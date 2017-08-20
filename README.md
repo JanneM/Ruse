@@ -28,7 +28,6 @@ Options include:
 
       --help             Print help
       --version          Display version
-
 ```
 
 For example:
@@ -50,7 +49,7 @@ Run ruse on make (making OpenCV), with a sampling frequency of 1 second, and log
 ruse -t1 -s make -j12
 ```
 
-Here we run "`make`" in parallel; this calls a number of external binaries to run the different stages of compiling and linking many hundreds of source files. Ruse samples all their memory use, and gives us an output file that looks something like this:
+Here we run 'make' in parallel; this calls a number of external binaries to run the different stages of compiling and linking many hundreds of source files. Ruse samples all their memory use, and gives us an output file that looks something like this:
 
 ```
 time(s)   mem(MB)
@@ -82,6 +81,20 @@ gnuplot> plot 'make-<pid>.ruse' using 1:2 lw 2 with lines
 ```
 
 We first tell gnuplot to treat the first line in the file as column labels, set the x and y axis labels, then plot columns 1 and 2 with thick lines: [OpenCV build over time](doc/opencv_make.png)
+
+## Build
+
+You will need the Linux software development tools (gcc, library headers and so on) as well as the GNU Autotools installed.
+
+First run autogen.sh to create the configuration files. Then do 'configure', 'make' and 'make install:
+
+```
+$ ./autogen.sh
+$ ./configure
+$ make && make install
+```
+
+Do './configure --help' to see the available options. In particular, you can use './configure --prefix=<some_path>' to install Ruse locally instead of system-wide.
 
 ## FAQ
 
