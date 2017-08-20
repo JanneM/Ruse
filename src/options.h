@@ -31,6 +31,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "config.h"
 
 typedef struct {
     bool verbose;

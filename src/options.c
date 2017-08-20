@@ -83,6 +83,10 @@ get_options(int *argc, char **argv[]) {
 	
 	switch (c) {
 	    
+	    case 1:
+		printf("%s %s\n", *argv[0], VERSION);
+		exit(EXIT_SUCCESS);
+		break;
 	    case 2:
 		show_help((**argv));
 		exit(EXIT_SUCCESS);
