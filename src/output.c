@@ -36,7 +36,6 @@ print_header(options *opts) {
 
     if (!opts->nohead && opts->steps) {
 	printf("time(s)   mem(MB)\n");
-	printf("------------------\n");
     }
 }
 
@@ -44,9 +43,8 @@ void
 print_summary(options *opts, size_t  memory, int ts) {
    
     if (!opts->nosum) {
-	printf("\n");
-	if (!opts->nohead) {
-	    printf("==================\n");
+	if (!opts->nohead && opts->steps) {
+	    printf("\n");
 	}
 	printf("Time(s):  %d\n", ts);
 	printf("Mem(MB):  %.1f\n", ((double)memory)/1024.0);
