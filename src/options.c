@@ -19,11 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Ruse.  If not, see <http://www.gnu.org/licenses/>.
  */
+#define _GNU_SOURCE
 
-#include <unistd.h>
-#include <stdlib.h>
-#include <getopt.h>
-#include <libgen.h>
 #include "options.h"
 
 void 
@@ -127,17 +124,37 @@ get_options(int *argc, char **argv[]) {
 
     }
     if (optind >= *argc) {
-	fprintf(stderr, "missing a program to run\n");
+	fprintf(stderr, "\nError: missing a program to profile\n\n");
 	show_help((**argv));
 	exit(EXIT_FAILURE);
     }
 
+    // point argv and argc to profiled program forwards
     *argc = *argc - optind;
     *argv = (*argv)+optind; 
+    
+    // create default label from profiled binary name
     if (strlen(opts->label) == 0) {
 	char *bname =strdup((*argv)[0]);
 	strncpy(opts->label, basename(bname) , 31);
 	free(bname);
+    }
+
+    // Set output file handle
+    if (opts->nofile) {
+	opts->fhandle = stdout;
+    } else {
+	char *fname;
+	pid_t pid = getpid();
+	int res = asprintf(&fname, "%s-%ld.ruse", opts->label, (long)pid);
+	if (res == -1) {
+	    error(EXIT_FAILURE, 0, "failed to create output file name.\n");
+	}
+
+	if ((opts->fhandle = fopen(fname, "w"))==NULL) {
+	    perror("failed to open output file.");
+	    exit(EXIT_FAILURE);
+        }
     }
     return opts;
 }

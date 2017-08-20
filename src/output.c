@@ -20,14 +20,13 @@
  * along with Ruse.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <math.h>
 #include "output.h"
 
 void
 print_steps(options *opts, size_t memory, int ts) {
 
     if (opts->steps) {
-	printf("%-9d %.1f\n", ts, ((double)memory)/1024.0);
+	fprintf(opts->fhandle, "%-9d %.1f\n", ts, ((double)memory)/1024.0);
     }
 }
 
@@ -35,7 +34,7 @@ void
 print_header(options *opts) {
 
     if (!opts->nohead && opts->steps) {
-	printf("time(s)   mem(MB)\n");
+	fprintf(opts->fhandle, "time(s)   mem(MB)\n");
     }
 }
 
@@ -44,10 +43,10 @@ print_summary(options *opts, size_t  memory, int ts) {
    
     if (!opts->nosum) {
 	if (!opts->nohead && opts->steps) {
-	    printf("\n");
+	    fprintf(opts->fhandle, "\n");
 	}
-	printf("Time(s):  %d\n", ts);
-	printf("Mem(MB):  %.1f\n", ((double)memory)/1024.0);
+	fprintf(opts->fhandle, "Time(s):  %d\n", ts);
+	fprintf(opts->fhandle, "Mem(MB):  %.1f\n", ((double)memory)/1024.0);
     }
 }
 

@@ -22,6 +22,7 @@
 
 #ifndef OUTPUT_H
 #define OUTPUT_H
+#include <math.h>
 #include "options.h"
 
 void

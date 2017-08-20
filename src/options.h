@@ -22,21 +22,27 @@
 
 #ifndef OPTIONS_H
 #define OPTIONS_H
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
+#include <error.h>
+#include <getopt.h>
+#include <libgen.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 typedef struct {
     bool verbose;
     bool steps;
-    int time;
+    unsigned int time;
     char *label;
     bool nofile;
     bool nohead;
     bool nosum;
+    FILE *fhandle;
 } options;
+
 
 
 /* Get and parse user options. Return an options struct, and index to the first non-option argument in argv.
