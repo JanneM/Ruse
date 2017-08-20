@@ -83,11 +83,9 @@ gnuplot> plot 'make-<pid>.ruse' using 1:2 lw 2 with lines
 
 We first tell gnuplot to treat the first line in the file as column labels, set the x and y axis labels, then plot columns 1 and 2 with thick lines:
 
-[OpenCV build over time](doc/opencv_make.svg)
+[OpenCV build over time](doc/opencv_make.png)
 
 ## FAQ
-
-
 
 #### Why is the sampling rate so low? 30 seconds is an eternity, and even 1 second misses a lot of events.
 
