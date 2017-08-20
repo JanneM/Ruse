@@ -39,7 +39,6 @@ all its subprocesses. \n\
   -t, --time=SECONDS     Sample every SECONDS (default 30)\n\
 \n\
       --help             Print help\n\
-  -v, --verbose          Verbose output\n\
       --version          Display version\n\
 \n");
     exit(EXIT_SUCCESS);
@@ -65,7 +64,7 @@ get_options(int *argc, char **argv[]) {
     while (1) {
 	int option_index = 0;
 	static struct option long_options[] = {
-	    {"verbose", no_argument,       0, 'v'},
+//	    {"verbose", no_argument,       0, 'v'},
 	    {"version", no_argument,       0,  1 },
 	    {"help",    no_argument,       0,  2 },
 	    {"label",   required_argument, 0, 'l'},
@@ -77,16 +76,12 @@ get_options(int *argc, char **argv[]) {
 	    {0,         0,                 0,  0 }
 	};
 
-	c = getopt_long(*argc, *argv, "+vhl:t:s",
+	c = getopt_long(*argc, *argv, "+hl:t:s",
 		long_options, &option_index);
 	if (c == -1)
 	    break;
 	
 	switch (c) {
-
-	    case 'v':
-		opts->verbose = true;
-		break;
 	    
 	    case 2:
 		show_help((**argv));
@@ -102,7 +97,11 @@ get_options(int *argc, char **argv[]) {
 		break;
 	    case 't':
 		opts->time = atoi(optarg);
-		break;
+		if (opts->time<1) {
+		    fprintf(stderr, "\nError: time must be a positive integer\n\n");
+		    show_help((**argv));
+		    exit(EXIT_FAILURE);
+		}
 
 	    case 3:
 		opts->nofile = true;
