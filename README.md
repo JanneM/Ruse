@@ -1,9 +1,9 @@
 # Ruse
 
 
-A command-line utility to periodically measure the resource use of a process and its subprocesses, in the same way as the Slurm job scheduler. Currently it measures only execution time and memory use by total RSS. 
+A command-line utility to periodically measure the resource use of a process and its subprocesses, in the same way as the [Slurm] job scheduler. Currently it measures only execution time and memory use by total RSS. 
 
-You can find the actual memory and execution time you need for individual programs or MPI processes, presented in a way that is straightforward to understand and apply to your Slurm job submissions.
+You can find the actual memory and execution time you need for individual programs or MPI processes, presented in a way that is straightforward to understand and apply to your [Slurm] job submissions.
 
 Ruse periodically samples the process and its subprocesses and keeps track of the time and maximum RSS use. It also optionally records the momentary time and memory use. The purpose is not to examine short processes in detail, but to follow jobs that run for many minutes, hours or days. 
 
@@ -104,17 +104,17 @@ Ruse is not meant to profile quick programs on your local computer. It's meant f
 
 And to run a job on a cluster you typically have to specify the resources — the number of nodes and cores, the amount of memory and the time — you will need ahead of time. You want to know the peak memory usage and time so you can ask for a sensible amount of these resources.
 
-Ruse uses 30 seconds by default because Slurm — the job scheduler we use — samples the resources used by jobs at that rate. We also limit it to no more than one sample per second to make sure Ruse itself does not significantly slow down the job.
+Ruse uses 30 seconds by default because [Slurm] — the job scheduler we use — samples the resources used by jobs at that rate. We also limit it to no more than one sample per second to make sure Ruse itself does not significantly slow down the job.
 
 #### Doesn't Slurm already tell you how much memory you use?
 
-Yes, Slurm can be configured to do that. But the data can be confusing or difficult to read, and you need to know a fair bit about how Slurm works to interpret the values correctly. This goes especially if your job has multiple subjobs, or uses MPI. Also, Slurm will not report the memory use of individual commands (unless you run them as subjobs) and will not give you a memory profile over time. 
+Yes, [Slurm] can be configured to do that. But the data can be confusing or difficult to read, and you need to know a fair bit about how [Slurm] works to interpret the values correctly. This goes especially if your job has multiple subjobs, or uses MPI. Also, [Slurm] will not report the memory use of individual commands (unless you run them as subjobs) and will not give you a memory profile over time. 
 
 Ruse attempts to report the data in a way that is easy to interpret and use to create a job submission. 
 
 #### How does Ruse measure memory use, exactly?
 
-Every sample interval, Ruse checks the process and all its subprocesses for the current "Resident Set Size" (RSS), and sums those values for the final result. It keeps track of the maximum over time and reports that at the end of the run. Slurm measures job memory use in the same way.
+Every sample interval, Ruse checks the process and all its subprocesses for the current "Resident Set Size" (RSS), and sums those values for the final result. It keeps track of the maximum over time and reports that at the end of the run. [Slurm] measures job memory use in the same way.
 
 This does mean it can count some memory multiple times. if your binary runs two processes that, say, both link to a shared library, then the memory used by that library code will be counted twice. There is another measure called "PSS" that does not count memory twice; shared memory is split among all processes that uses it. But this 
 is an unworkable measure in multi-user systems, as the actions of other users (starting or stopping processes that use that same shared memory) will affect the amount of memory your process is considered to use.
@@ -124,3 +124,4 @@ is an unworkable measure in multi-user systems, as the actions of other users (s
 Yes. I hope to add an estimation of CPU and core use over time as well. There's no specific timeline for that, though.
 
 
+[Slurm]: https://slurm.schedmd.com/
