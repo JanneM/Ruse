@@ -30,5 +30,6 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime getpagesize strerror])
 
 AC_CONFIG_FILES([Makefile
-                 src/Makefile])
+                 src/Makefile
+		 util/Makefile])
 AC_OUTPUT
