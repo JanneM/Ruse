@@ -92,7 +92,7 @@ get_all_pids() {
 	// Should we possibly not fail here?
 	exit(EXIT_FAILURE);
     }
-    
+
     if ((plist = iarr_create(4)) == NULL) {
 	error(EXIT_FAILURE, 0, "failed to create PID list container");
     }
@@ -148,6 +148,9 @@ get_RSS_r(int pid, procdata *p, int l) {
     size_t rss=0;
     for (int i=0; i<l; i++) {
 	if (p[i].parent == pid) {
+#ifdef DEBUG
+    printf("%d ", p[i].pid);
+#endif
 	    rss += p[i].rss + get_RSS_r(p[i].pid, p, l);
 	}
     }
@@ -166,7 +169,7 @@ get_RSS(int pid) {
     if ((plist = get_all_pids()) == NULL) {
 	exit(EXIT_FAILURE); // should be caught in get_all_pids
     }
-
+    
     if (plist->len < 1) {
 	error(EXIT_FAILURE, 0, "failed to get process pid list.\n");
     }
@@ -179,9 +182,15 @@ get_RSS(int pid) {
     elems = get_all_procs(procs, plist);
     for (int i=0; i<elems; i++) {
 	if (procs[i].pid == pid) {
+#ifdef DEBUG
+    printf("procs: %d ", pid);
+#endif
 	    rss = procs[i].rss + get_RSS_r(pid, procs, elems);
 	    break;
 	}
     }
+#ifdef DEBUG
+    printf("\n");
+#endif
     return rss;
 }
