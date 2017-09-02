@@ -45,6 +45,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <error.h>
+
+#include "options_multiproc.h"
+#include "do_task.h"
+
 #define KB 1024
 #define MB (KB*KB)
 
@@ -60,7 +64,7 @@ memalloc(int mb) {
 
 /* fork a new process that allocates memory, then sleeps */
 pid_t
-dofork(int stime){
+dofork(unsigned int stime, bool busy){
     pid_t pid = fork();
 
     if (pid < 0)
@@ -71,7 +75,8 @@ dofork(int stime){
     {
         /* We're the child */
 	char *mem = memalloc(10);
-	sleep(stime);
+	
+	do_task(stime, busy);
 	free(mem);
 	exit(0);
     }
@@ -81,16 +86,18 @@ dofork(int stime){
 int
 main(int argc, char*argv[]) {
 
+    options *opts = get_options(&argc, &argv);
+    
     int wstatus;
 
-    /* create two 5-second processes, each allocating 10MB, with a
+    /* create processes, each allocating 10MB, with a
      * 2-second delay. 
      */
-
-    dofork(5);
-    sleep(2);
-    dofork(5);
-
-    wait(&wstatus);
-    wait(&wstatus);
+    for (int i=0; i<opts->procs; i++) {
+	dofork(opts->time, opts->busy);
+	sleep(2);
+    }
+    for (int i=0; i<opts->procs; i++) {
+	wait(&wstatus);
+    }
 }
