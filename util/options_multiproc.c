@@ -25,12 +25,16 @@
 
 void 
 show_help(const char *progname) {
-    printf("Usage: %s [FLAGS] [--help]\n", progname);
+    printf("Usage: %s [FLAGS] [--help]\n\n", progname);
     printf("\
-Run a test program that forks [procs] subprocesses.\n\
+Run a test program that forks <procs> subprocesses, staggered \n\
+by 2 seconds, and each running for <time> seconds.\n\
 \n\
   -p, --procs=PROCS      Fork into PROCS subprocesses.\n\
   -t, --time=SECONDS     Running time (5 seconds)\n\
+\n\
+      --busy             keep cores busy (default)\n\
+      --idle             keep cores idle\n\
 \n\
       --help             Print help\n\
 \n");
@@ -53,6 +57,8 @@ get_options(int *argc, char **argv[]) {
 	static struct option long_options[] = {
 	    {"help",    no_argument,       0,  1 },
 	    {"procs",    no_argument,       0, 's'},
+	    {"busy",    no_argument,       0, '2'},
+	    {"idle",    no_argument,       0, '3'},
 	    {"time",    required_argument, 0, 't'},
 	    {0,         0,                 0,  0 }
 	};
@@ -61,14 +67,19 @@ get_options(int *argc, char **argv[]) {
 		long_options, &option_index);
 	if (c == -1)
 	    break;
-	
+	    
 	switch (c) {
 	    
 	    case 1:
 		show_help((**argv));
 		exit(EXIT_SUCCESS);
 		break;
-	    
+	    case 2:
+		opts->busy=true;
+		break;
+	    case 3:
+		opts->busy=false;
+		break;
 	    case 't':
 		opts->time = atoi(optarg);
 		if (opts->time<1) {
