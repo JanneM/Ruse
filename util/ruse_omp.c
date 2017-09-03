@@ -45,6 +45,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <error.h>
+
+#include "options_omp.h"
+#include "do_task.h"
+
 #define KB 1024
 #define MB (KB*KB)
 
@@ -61,15 +65,22 @@ memalloc(int mb) {
 int
 main(int argc, char*argv[]) {
 
-    /* Run the loop using two OMP threads (unless your machine has only 
-     * a single available core) 
-    */
+    options *opts = get_options(&argc, &argv);
 
-    #pragma omp parallel for
-    for (int i=0; i<2; i++) {
-	sleep(i*2);
-	char *mem = memalloc(10);
-	sleep(5);
-	free(mem);    
+    /* Run a number of iterations of alternating OpenMP parallel threads 
+     * and single-process execution.
+     */
+
+    for (int j=0; j<opts->iter; j++) {
+
+	#pragma omp parallel for
+	for (int i=0; i<opts->procs; i++) {
+	    char *mem = memalloc(10);
+	    do_task(opts->time, opts->busy);
+	    free(mem);    
+	}
+	if (opts->single>0) {	
+	    do_task(opts->single, opts->busy);
+	}
     }
 }
