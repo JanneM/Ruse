@@ -45,7 +45,7 @@ typedef struct {
 
 /* extract the current RSS (resident set size) and parent process for
  * process pid.  If the pid does not exist, return -1
-*/
+ */
 
 bool
 read_RSS(int pid, size_t *rss, int *parent);
@@ -55,11 +55,14 @@ read_RSS(int pid, size_t *rss, int *parent);
 iarr *
 get_all_pids();
 
-/* Get data on all current processes on the system, with kernel processes filtered away */
+/* Get data on all current processes on the system 
+ */
+
 int
 get_all_procs(procdata *procs, iarr *plist);
 
 /* Get total RSS for process tree rooted in pid */
+
 size_t
 get_RSS(int pid);
 

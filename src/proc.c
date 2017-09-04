@@ -79,24 +79,11 @@ read_RSS(int pid, size_t *rss, int *parent) {
     return true;
 }
 
-iarr *
-get_all_pids() {
-    
-    DIR *df;
+void
+read_pid_entries(DIR *df, iarr *plist) {
+
     struct dirent *dir;
     size_t res;
-    iarr *plist;
-
-    if ((df = opendir("/proc")) == NULL){
-	perror("get_all_pids:");
-	// Should we possibly not fail here?
-	exit(EXIT_FAILURE);
-    }
-
-    if ((plist = iarr_create(4)) == NULL) {
-	error(EXIT_FAILURE, 0, "failed to create PID list container");
-    }
-
     while ((dir = readdir(df)) != NULL) {
 	
 	if (dir->d_type != DT_DIR) {
@@ -115,6 +102,25 @@ get_all_pids() {
 	    error(EXIT_FAILURE, 0, "failed to insert into PID list container");
         }
     }
+}
+
+iarr *
+get_all_pids() {
+    
+    DIR *df;
+    iarr *plist;
+
+    if ((df = opendir("/proc")) == NULL){
+	perror("get_all_pids:");
+	// Should we possibly not fail here?
+	exit(EXIT_FAILURE);
+    }
+
+    if ((plist = iarr_create(4)) == NULL) {
+	error(EXIT_FAILURE, 0, "failed to create PID list container");
+    }
+
+    read_pid_entries(df, plist);
     return plist;
 }
 
