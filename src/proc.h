@@ -43,7 +43,7 @@ typedef struct {
 } procdata;
 
 
-/* extract the current RSS (resident set size) and parent process if for
+/* extract the current RSS (resident set size) and parent process for
  * process pid.  If the pid does not exist, return -1
 */
 

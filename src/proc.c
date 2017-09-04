@@ -175,7 +175,7 @@ get_RSS(int pid) {
     }
 
     if ((procs = calloc(plist->len, sizeof(procdata))) == NULL) {
-	perror("get_all_procs");
+	perror("get_RSS");
 	exit(EXIT_FAILURE);
     }
 
@@ -194,3 +194,4 @@ get_RSS(int pid) {
 #endif
     return rss;
 }
+
