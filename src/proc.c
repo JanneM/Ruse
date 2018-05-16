@@ -47,6 +47,7 @@ read_RSS(int pid, size_t *rss, int *parent) {
     }
 
     if (getline(&line, &len, f) == -1) {
+	fclose(f);
 	fprintf(stderr, "Failed to read '%s': %s\n", fname, strerror(errno));
 	return false;
     }
@@ -94,6 +95,7 @@ get_all_pids() {
     }
 
     if ((plist = iarr_create(4)) == NULL) {
+	closedir(df);
 	error(EXIT_FAILURE, 0, "failed to create PID list container");
     }
 
@@ -115,6 +117,7 @@ get_all_pids() {
 	    error(EXIT_FAILURE, 0, "failed to insert into PID list container");
         }
     }
+    closedir(df);
     return plist;
 }
 
