@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT(ruse, 1.0, jan.moren@oist.jp)
+AC_INIT(ruse, 1.0.1, jan.moren@oist.jp)
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/proc.h])
 AC_CONFIG_HEADERS([config.h])
