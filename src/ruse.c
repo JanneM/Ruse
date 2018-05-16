@@ -70,10 +70,12 @@ sighandler(int signal, siginfo_t *siginfo, void *uc) {
     } else if (signal==SIGCHLD) {
 	sigtype=signal;
 
+    /* got a termination signal. We'll propagate it, then terminate */
     } else {
-	sigtype=0;
+	sigtype=signal;
     }
 }
+
 
 /* Set up signal handling.
  *
@@ -92,8 +94,13 @@ set_signals(int sectime) {
     sa_chld.sa_flags = SA_SIGINFO|SA_NOCLDSTOP;
     sa_chld.sa_sigaction = sighandler;
     sigemptyset(&sa_chld.sa_mask);
-    if (sigaction(SIGCHLD, &sa_chld, NULL) == -1) {
-	perror("sigaction");
+    if (sigaction(SIGCHLD, &sa_chld, NULL) == -1 ||
+	sigaction(SIGHUP, &sa_chld, NULL) == -1 ||
+	sigaction(SIGINT, &sa_chld, NULL) == -1 ||
+	sigaction(SIGQUIT, &sa_chld, NULL) == -1 ||
+	sigaction(SIGTERM, &sa_chld, NULL) == -1) {
+
+	perror("set signals: sighandler");
 	exit(EXIT_FAILURE);
     }
 
@@ -102,7 +109,7 @@ set_signals(int sectime) {
     sa_time.sa_sigaction = sighandler;
     sigemptyset(&sa_time.sa_mask);
     if (sigaction(SIG, &sa_time, NULL) == -1) {
-	perror("sigaction");
+	perror("set_signals: timer");
 	exit(EXIT_FAILURE);
     }
 
@@ -111,7 +118,7 @@ set_signals(int sectime) {
     sev.sigev_signo = SIG;
     sev.sigev_value.sival_ptr = &timerid;
     if (timer_create(CLOCKID, &sev, &timerid) == -1) {
-	perror("timer_create");
+	perror("set_signals: timer_create");
 	exit(EXIT_FAILURE);
     }
 
@@ -121,7 +128,7 @@ set_signals(int sectime) {
     its.it_interval.tv_sec = its.it_value.tv_sec;
     its.it_interval.tv_nsec = its.it_value.tv_nsec;
     if (timer_settime(timerid, 0, &its, NULL) == -1){
-	perror("timer_settime");
+	perror("set_signals: timer_settime");
 	exit(EXIT_FAILURE);
     }
 }
@@ -191,9 +198,15 @@ main(int argc, char *argv[])
 		time(&t2);
 		print_steps(opts, rssmem, (t2-t1)); 
 	    }
-
+	/* Child disappeared. Finish this. */ 
 	} else if (sigtype == SIGCHLD) {
 	    break;	
+
+	/* we got a termination signal. Propagate to child just
+	 * in case, then finish. */
+	} else {
+	    kill(pid, sigtype);
+	    break;
 	}
     }
 
@@ -207,7 +220,6 @@ main(int argc, char *argv[])
     if (!opts->nofile) {
 	fclose(opts->fhandle);
     }
-//    printf("Mem(MB): %li\nTime(s): %li\n", mem, runtime);
 
     return EXIT_SUCCESS;
 }
