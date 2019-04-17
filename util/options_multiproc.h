@@ -34,9 +34,10 @@
 #include "config.h"
 
 typedef struct {
-    unsigned int time;
+    int time;
     bool busy;
-    unsigned int procs;
+    int procs;
+    int mem;
 } options;
 
 

@@ -32,6 +32,7 @@ by 2 seconds, and each running for <time> seconds.\n\
 \n\
   -p, --procs=PROCS      Fork into PROCS subprocesses.\n\
   -t, --time=SECONDS     Running time (5 seconds)\n\
+  -m, --mem=MB           Allocated memory (10Mb)\n\
 \n\
       --busy             keep cores busy (default)\n\
       --idle             keep cores idle\n\
@@ -49,6 +50,7 @@ get_options(int *argc, char **argv[]) {
     opts->procs   = 2;
     opts->busy	  = true;
     opts->time    = 5;
+    opts->mem     = 10;
 
     int c;
 
@@ -56,14 +58,15 @@ get_options(int *argc, char **argv[]) {
 	int option_index = 0;
 	static struct option long_options[] = {
 	    {"help",    no_argument,       0,  1 },
-	    {"procs",    no_argument,       0, 's'},
+	    {"procs",    required_argument,   0, 'p'},
 	    {"busy",    no_argument,       0, '2'},
 	    {"idle",    no_argument,       0, '3'},
 	    {"time",    required_argument, 0, 't'},
+	    {"mem",    required_argument, 0, 'm'},
 	    {0,         0,                 0,  0 }
 	};
 
-	c = getopt_long(*argc, *argv, "+ht:p:",
+	c = getopt_long(*argc, *argv, "+ht:p:m:",
 		long_options, &option_index);
 	if (c == -1)
 	    break;
@@ -92,6 +95,14 @@ get_options(int *argc, char **argv[]) {
 		opts->procs = atoi(optarg);
 		if (opts->procs<1) {
 		    fprintf(stderr, "\nError: procs must be a positive integer\n\n");
+		    show_help((**argv));
+		    exit(EXIT_FAILURE);
+		}
+		break;
+	    case 'm':
+		opts->mem = atoi(optarg);
+		if (opts->mem<1) {
+		    fprintf(stderr, "\nError: mem must be a positive integer\n\n");
 		    show_help((**argv));
 		    exit(EXIT_FAILURE);
 		}
