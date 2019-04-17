@@ -64,7 +64,7 @@ memalloc(int mb) {
 
 /* fork a new process that allocates memory, then sleeps */
 pid_t
-dofork(unsigned int stime, bool busy){
+dofork(unsigned int stime, unsigned int smem, bool busy){
     pid_t pid = fork();
 
     if (pid < 0)
@@ -74,7 +74,7 @@ dofork(unsigned int stime, bool busy){
     if (pid == 0)
     {
         /* We're the child */
-	char *mem = memalloc(10);
+	char *mem = memalloc(smem);
 	
 	do_task(stime, busy);
 	free(mem);
@@ -94,7 +94,7 @@ main(int argc, char*argv[]) {
      * 2-second delay. 
      */
     for (int i=0; i<opts->procs; i++) {
-	dofork(opts->time, opts->busy);
+	dofork((unsigned int)opts->time, (unsigned int)opts->mem, opts->busy);
 	sleep(2);
     }
     for (int i=0; i<opts->procs; i++) {
