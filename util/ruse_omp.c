@@ -45,6 +45,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <error.h>
+#include <omp.h>
 
 #include "options_omp.h"
 #include "do_task.h"
@@ -71,16 +72,20 @@ main(int argc, char*argv[]) {
      * and single-process execution.
      */
 
+    if (opts->procs >0) {
+	omp_set_num_threads(opts->procs);
+    }
+
     for (int j=0; j<opts->iter; j++) {
 
+	if (opts->single>0) {	
+	    do_task(opts->single, opts->busy);
+	}
 	#pragma omp parallel for
 	for (int i=0; i<opts->procs; i++) {
 	    char *mem = memalloc(10);
 	    do_task(opts->time, opts->busy);
 	    free(mem);    
-	}
-	if (opts->single>0) {	
-	    do_task(opts->single, opts->busy);
 	}
     }
 }

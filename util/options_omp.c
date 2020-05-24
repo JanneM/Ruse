@@ -49,7 +49,7 @@ options*
 get_options(int *argc, char **argv[]) {
 
     options *opts = malloc(sizeof(options));
-    opts->procs   = 2;
+    opts->procs   = -1;
     opts->busy	  = true;
     opts->time    = 5;
     opts->single  = 0;
