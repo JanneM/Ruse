@@ -75,6 +75,7 @@ main(int argc, char*argv[]) {
     if (opts->procs >0) {
 	omp_set_num_threads(opts->procs);
     }
+    int procs = omp_get_max_threads();
 
     for (int j=0; j<opts->iter; j++) {
 
@@ -82,7 +83,7 @@ main(int argc, char*argv[]) {
 	    do_task(opts->single, opts->busy);
 	}
 	#pragma omp parallel for
-	for (int i=0; i<opts->procs; i++) {
+	for (int i=0; i<procs; i++) {
 	    char *mem = memalloc(10);
 	    do_task(opts->time, opts->busy);
 	    free(mem);    
