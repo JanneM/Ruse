@@ -13,9 +13,9 @@ jiffy = float(os.sysconf(os.sysconf_names['SC_CLK_TCK']))
 cmdline = sys.argv[1:]
 print(cmdline)
 ncores = os.cpu_count()
-nprocs = os.environ.get('OMP_NUM_THREADS', os.cpu_count())  
+nprocs = int(os.environ.get('OMP_NUM_THREADS', os.cpu_count()))
 
-print(nprocs)
+print("procs: {}\t cores: {}".format(nprocs, ncores))
 
 proc = subprocess.Popen(cmdline)
 tzero = time.clock_gettime(time.CLOCK_REALTIME)
@@ -23,10 +23,10 @@ print(proc.pid)
 
 procdir = os.path.join("/proc", str(proc.pid))
 
-# utime for a thread
-tutlist={}
-corelist=[0.0]*nprocs
-corearr = [0.0]*ncores
+# utime for a threadcd
+tutlist  = {}
+corelist = [0.0]*nprocs
+corearr  = [0.0]*ncores
 
 with open('/proc/uptime', 'r') as f:
     uptime = float(f.readline().split()[0])
@@ -43,8 +43,8 @@ while (proc.poll() == None):
     tdir = os.path.join(procdir, "task")
     threads = os.listdir(tdir)
     tnum = len(threads)
-    for i in range(0,6):
-        corelist[i] = 0.0
+    for i in range(0,ncores):
+        corearr[i] = 0.0
     
     for t in threads:
         with open(os.path.join(tdir, t, "stat")) as f:
@@ -61,11 +61,15 @@ while (proc.poll() == None):
                 tutlist[t] = utime
                 print("{}: {}\t utime: {:.2f}\t  prop: {:.2f}\t start: {:.2f}\t core: {:d}"
                         .format(t, uptime, utime, udiff/tdiff, starttime, int(core)))
+                
+                pval = udiff/tdiff
+                corearr[core] += pval
+                
+    corearr.sort(reverse=True)
 
+    for i in range(nprocs):
+        print("{:.4f}\t".format(corearr[i]), end="")
 
-                corelist[core] += udiff/tdiff
-    for v in corelist:
-        print("{:.4f}\t".format(v), end="")
 
     print()
 
