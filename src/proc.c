@@ -28,7 +28,7 @@ read_RSS(int pid, size_t *rss, int *parent) {
     int i;
     int res;
     char *line = NULL;
-    size_t len=1023;
+    size_t len=0;
     char *field;
     char *fname;
     FILE *f;
@@ -80,6 +80,7 @@ read_RSS(int pid, size_t *rss, int *parent) {
     return true;
 }
 
+/* get all pids on the system */
 iarr *
 get_all_pids() {
     

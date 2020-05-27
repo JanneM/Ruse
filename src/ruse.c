@@ -18,6 +18,10 @@
  * along with Ruse.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* needed for cpu sets */
+#define _GNU_SOURCE
+#include <sched.h>
+
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/types.h>
@@ -142,9 +146,18 @@ main(int argc, char *argv[])
     size_t rssmem = 0;
     sigset_t mask;
     sigset_t old_mask;
-
-
+    
+    /* system information */
+    cpu_set_t cpumask;
+    int res = sched_getaffinity(0, sizeof(cpu_set_t), &cpumask);
+    long totprocs = sysconf(_SC_NPROCESSORS_ONLN);
+    int nprocs = CPU_COUNT(&cpumask);
+    int jiffy = sysconf(_SC_CLK_TCK);
     syspagesize = getpagesize()/KB;
+#ifdef DEBUG
+    printf("cores (total): %d (%ld)\n", nprocs, totprocs);
+    printf("jiffies: %d\npage size: %d\n", jiffy, syspagesize);
+#endif
 
     /* block signals from the timer and the child until we're ready 
      * to receive them
@@ -156,7 +169,7 @@ main(int argc, char *argv[])
 
     options *opts = get_options(&argc, &argv);
 
-    /* Time the process*/
+    /* Time the process */
     time(&t1);
 
     pid_t pid = fork();
