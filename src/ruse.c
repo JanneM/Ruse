@@ -40,6 +40,7 @@
 #include "proc.h"
 #include "options.h"
 #include "output.h"
+#include "thread.h"
 
 #define KB 1024
 #define MAX(x,y) ((x) > (y) ? (x): (y))
@@ -153,6 +154,7 @@ main(int argc, char *argv[])
     long totprocs = sysconf(_SC_NPROCESSORS_ONLN);
     int nprocs = CPU_COUNT(&cpumask);
     int jiffy = sysconf(_SC_CLK_TCK);
+    pstruct *pstr;
     syspagesize = getpagesize()/KB;
 #ifdef DEBUG
     printf("cores (total): %d (%ld)\n", nprocs, totprocs);
@@ -186,8 +188,8 @@ main(int argc, char *argv[])
     }
 
     /* We're the parent */
-
-    mem = get_RSS(pid);
+    pstr = malloc(sizeof(pstruct));
+    mem = get_RSS(pid, pstr);
     print_header(opts);
     print_steps(opts, mem, 0); 
 
@@ -200,7 +202,7 @@ main(int argc, char *argv[])
 #ifdef DEBUG
 	    clock_gettime(CLOCK_REALTIME, &tic);
 #endif
-	    rssmem = get_RSS(pid);
+	    rssmem = get_RSS(pid, pstr);
 #ifdef DEBUG    
 	    clock_gettime(CLOCK_REALTIME, &toc);
 	    printf("mem: %li %.2fms\n", rssmem, time_diff_micro(&toc, &tic)/1000.0);

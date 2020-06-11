@@ -23,16 +23,15 @@
 int syspagesize=0;
 
 bool
-read_RSS(int pid, size_t *rss, int *parent) {
+read_RSS(int pid, int *parent) {
 
-    int i;
     int res;
     char *line = NULL;
     size_t len=0;
     char *field;
     char *fname;
     FILE *f;
-    
+
     res = asprintf(&fname, "/proc/%i/stat", pid);
     if (res == -1) {
 	fprintf(stderr, "Failed to convert proc file name\n");
@@ -54,20 +53,73 @@ read_RSS(int pid, size_t *rss, int *parent) {
     
     char *line_tmp = line;
 
-    for(i=0; i<24; i++) {
+    field = strsep(&line_tmp, " ");
+    field = strsep(&line_tmp, " ");
+    field = strsep(&line_tmp, " ");
+    field = strsep(&line_tmp, " ");
+    *parent = atol(field);
+    
+    // ignore kernel processes
+    if (*parent == 2) {
+	fclose(f);
+	return false;
+    }
+    if(line)
+	free(line);
+
+    fclose(f);    
+    return true;
+}
+
+bool
+read_stat(int pid, size_t *rss, pstruct *pstr) {
+
+    int i;
+    int res;
+    char *line = NULL;
+    size_t len=0;
+    char *field;
+    char *fname;
+    FILE *f;
+    unsigned long utime;
+ //   unsigned long long starttime;
+    int core;
+
+    res = asprintf(&fname, "/proc/%i/stat", pid);
+    if (res == -1) {
+	fprintf(stderr, "Failed to convert proc file name\n");
+	return false;
+    }
+    
+    f = fopen(fname, "r");
+    
+    // pids may disappear. This is not an error
+    if (!f) {
+	return false;
+    }
+
+    if (getline(&line, &len, f) == -1) {
+	fclose(f);
+	fprintf(stderr, "Failed to read '%s': %s\n", fname, strerror(errno));
+	return false;
+    }
+    
+    char *line_tmp = line;
+
+    for(i=0; i<39; i++) {
 	field = strsep(&line_tmp, " ");
 	switch(i) {
-	    case 3:	// parent
-		*parent = atol(field);
-		
-		// ignore kernel processes
-		if (*parent == 2) {
-		    fclose(f);
-		    return false;
-		}
+	    case 13:	// execute time
+		utime = atol(field);
 		continue;
-	    case 23:	// rss
+/*	    case 21:	// process start time
+		starttime = atoll(field);
+		continue;
+*/	    case 23:	// rss
 		*rss = atol(field);
+		continue;
+	    case 38:	// core
+		core = atoi(field);
 		continue;
 	}
     }
@@ -138,7 +190,7 @@ get_all_procs(procdata *procs, iarr *plist) {
     procc = 0;
     for (pidc = 0; pidc<elems; pidc++) {
 	pid = plist->ilist[pidc];
-	if ((read_RSS(pid, &(procs[procc].rss), &(procs[procc].parent))) == true) {
+	if ((read_RSS(pid, &(procs[procc].parent))) == true) {
 	    procs[procc].pid = pid;
 	    procc++;
 	}
@@ -147,15 +199,18 @@ get_all_procs(procdata *procs, iarr *plist) {
 }
 
 size_t
-get_RSS_r(int pid, procdata *p, int l) {
+get_RSS_r(int pid, procdata *p, int l, pstruct *pstr) {
     
     size_t rss=0;
+    size_t get_rss;
+
     for (int i=0; i<l; i++) {
 	if (p[i].parent == pid) {
 #ifdef DEBUG
     printf("%d ", p[i].pid);
 #endif
-	    rss += p[i].rss + get_RSS_r(p[i].pid, p, l);
+	    read_stat(p[i].pid, &get_rss, pstr);
+	    rss += get_rss + get_RSS_r(p[i].pid, p, l, pstr);
 	}
     }
     return rss;
@@ -163,12 +218,14 @@ get_RSS_r(int pid, procdata *p, int l) {
 
 
 size_t
-get_RSS(int pid) {
+get_RSS(int pid, pstruct *pstr) {
 
     int elems;
     iarr *plist;
     procdata *procs;
     size_t rss = 0;
+    size_t get_rss;
+
 
     if ((plist = get_all_pids()) == NULL) {
 	exit(EXIT_FAILURE); // should be caught in get_all_pids
@@ -189,7 +246,8 @@ get_RSS(int pid) {
 #ifdef DEBUG
     printf("procs: %d ", pid);
 #endif
-	    rss = procs[i].rss + get_RSS_r(pid, procs, elems);
+	    read_stat(pid, &get_rss, pstr);
+	    rss = get_rss + get_RSS_r(pid, procs, elems, pstr);
 	    break;
 	}
     }

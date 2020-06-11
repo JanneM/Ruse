@@ -31,7 +31,7 @@
 #include <dirent.h>
 #include <stdbool.h>
 #include "arr.h"
-
+#include "thread.h"
 
 /* system page size, for calculating the memory use */
 extern int syspagesize;
@@ -39,7 +39,7 @@ extern int syspagesize;
 typedef struct {
     int pid;
     int parent;
-    size_t rss;
+//    size_t rss;
 } procdata;
 
 
@@ -48,7 +48,7 @@ typedef struct {
 */
 
 bool
-read_RSS(int pid, size_t *rss, int *parent);
+read_RSS(int pid, int *parent);
 
 /* get all process pids on the system */
 
@@ -61,6 +61,6 @@ get_all_procs(procdata *procs, iarr *plist);
 
 /* Get total RSS for process tree rooted in pid */
 size_t
-get_RSS(int pid);
+get_RSS(int pid, pstruct *pstr);
 
 #endif
