@@ -40,7 +40,8 @@ typedef struct {
     void *proot;
     t_struct *tstr;
 
-    double *cores;		    // array of current cores
+    double *cores;		    // array of temporary cores
+    double *cores_cur;		    // array of current cores
     double *cores_acc;		    // array of accumulated cores
     long int hw_cores;		    // number of available cores in hardware
     unsigned int max_cores;	    // number of allocated cores

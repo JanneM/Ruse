@@ -72,7 +72,7 @@ read_parent(int pid, int *parent) {
 }
 
 bool
-read_stat(int pid, size_t *rss, pstruct *pstr) {
+read_mem(int pid, size_t *rss) {
 
     int i;
     int res;
@@ -81,9 +81,6 @@ read_stat(int pid, size_t *rss, pstruct *pstr) {
     char *field;
     char *fname;
     FILE *f;
-    unsigned long utime;
- //   unsigned long long starttime;
-    int core;
 
     res = asprintf(&fname, "/proc/%i/stat", pid);
     if (res == -1) {
@@ -106,29 +103,100 @@ read_stat(int pid, size_t *rss, pstruct *pstr) {
     
     char *line_tmp = line;
 
-    for(i=0; i<39; i++) {
+    for(i=0; i<24; i++) {
 	field = strsep(&line_tmp, " ");
-	switch(i) {
-	    case 13:	// execute time
-		utime = atol(field);
-		continue;
-/*	    case 21:	// process start time
-		starttime = atoll(field);
-		continue;
-*/	    case 23:	// rss
-		*rss = atol(field);
-		continue;
-	    case 38:	// core
-		core = atoi(field);
-		continue;
-	}
     }
+    *rss = atol(field);
 
     if(line)
 	free(line);
 
     fclose(f);    
     *rss  *= syspagesize;
+    return true;
+}
+
+bool
+read_threads(int pid, pstruct *pstr) {
+    int i;
+    int res;
+    int tnum;
+    
+    char *line = NULL;
+    size_t len=0;
+    char *field;
+    char *dname;
+    char *fname;
+    DIR *df;
+    struct dirent *dir;
+    FILE *f;
+    int core = -1;
+    unsigned long utime = 0;
+
+    res = asprintf(&dname, "/proc/%i/task", pid);
+    if (res == -1) {
+	fprintf(stderr, "Failed to create task dir name\n");
+	return false;
+    }
+    df = opendir(dname);
+    free(dname);
+
+    if (df == NULL) {
+	perror("read threads:");
+	// processes may suddenly disappear. This is not a failure.
+	return true;
+    }
+
+    while ((dir = readdir(df)) != NULL) {
+	
+	if (dir->d_type != DT_DIR) {
+	    continue;
+	}
+	
+	tnum = atol(dir->d_name);
+    
+        res = asprintf(&fname, "/proc/%i/task/%i/stat", pid, tnum);
+        if (res == -1) {
+	    fprintf(stderr, "Failed to convert proc file name\n");
+	    return false;
+        }
+    
+        f = fopen(fname, "r");
+        free(fname);
+    
+        // pids may disappear. This is not an error.
+        if (f == NULL) {
+	    return true;
+        }
+
+        if (getline(&line, &len, f) == -1) {
+            fclose(f);
+            fprintf(stderr, "Failed to read stat from '%d': %s\n", tnum, strerror(errno));
+            return false;
+        }
+        
+        char *line_tmp = line;
+
+        for(i=0; i<39; i++) {
+            field = strsep(&line_tmp, " ");
+            switch(i) {
+                case 13:	// execute time
+                    utime = atol(field);
+                    continue;
+                case 38:	// core
+                    core = atoi(field);
+                    continue;
+            }
+        }
+
+        if(line)
+            free(line);
+
+        fclose(f);
+        add_thread(pstr, pid, utime, core); 
+
+    } // readdir
+
     return true;
 }
 
@@ -208,7 +276,8 @@ get_RSS_r(int pid, procdata *p, int l, pstruct *pstr) {
 #ifdef DEBUG
     printf("%d ", p[i].pid);
 #endif
-	    read_stat(p[i].pid, &get_rss, pstr);
+	    read_mem(p[i].pid, &get_rss);
+            read_threads(p[i].pid, pstr);
 	    rss += get_rss + get_RSS_r(p[i].pid, p, l, pstr);
 	}
     }
@@ -240,12 +309,18 @@ get_RSS(int pid, pstruct *pstr) {
     }
 
     elems = get_all_procs(procs, plist);
+
+    if (do_thread_iter(pstr) == false) {
+        exit(EXIT_FAILURE);
+    }
+
     for (int i=0; i<elems; i++) {
 	if (procs[i].pid == pid) {
 #ifdef DEBUG
     printf("procs: %d ", pid);
 #endif
-	    read_stat(pid, &get_rss, pstr);
+	    read_mem(pid, &get_rss);
+            read_threads(pid, pstr);
 	    rss = get_rss + get_RSS_r(pid, procs, elems, pstr);
 	    break;
 	}
@@ -253,5 +328,6 @@ get_RSS(int pid, pstruct *pstr) {
 #ifdef DEBUG
     printf("\n");
 #endif
+    thread_summarize(pstr);
     return rss;
 }

@@ -205,7 +205,13 @@ main(int argc, char *argv[])
 
 	    if (opts->steps) {
 		time(&t2);
-		print_steps(opts, rssmem, (t2-t1)); 
+		print_steps(opts, rssmem, (t2-t1));
+                printf("cores: %d - ", pstr->using_cores);
+                for (int i=0; i < pstr->using_cores; i++) {
+                    printf("%f\t ",pstr->cores_cur[i]);
+                }
+                printf("\n");
+
 	    }
 	/* Child disappeared. Finish this. */ 
 	} else if (sigtype == SIGCHLD) {

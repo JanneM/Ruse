@@ -115,10 +115,15 @@ create_pstruct() {
 	perror("create_pstruct");
 	return NULL;
     }
+    if ((pstr->cores_cur = malloc(sizeof(double)*(pstr->hw_cores)))==NULL) {
+	perror("create_pstruct");
+	return NULL;
+    }
     /* initialize core lists */
     for (int i=0; i<pstr->hw_cores; i++) {
 	pstr->cores[i] = -1.0;
 	pstr->cores_acc[i] = 0.0;
+	pstr->cores_cur[i] = 0.0;
     }
     pstr->using_cores = 0;
     pstr->peak_cores = 0;
@@ -140,6 +145,7 @@ do_thread_iter(pstruct *pstr) {
     /* reset temporary core list */
     for (int i=0; i<pstr->hw_cores; i++) {
 	pstr->cores[i]=-1.0;
+	pstr->cores_cur[i]=0.0;
     }
     f = fopen("/proc/uptime", "r");
     if (getline(&line, &len, f) == -1) {
@@ -206,7 +212,7 @@ thread_summarize(pstruct *pstr) {
 	if (cmin == -1 && pstr->cores[i]>=0.0) {
 	    cmin = i;
 	}
-	if (cmax == -1 && pstr->cores[i]<0.0) {
+	if (cmin > -1 && cmax == -1 && pstr->cores[i]<0.0) {
 	    cmax = i;
 	    break;
 	}
@@ -217,10 +223,11 @@ thread_summarize(pstruct *pstr) {
     
     for (int i=cmin; i<(cmax-cmin); i++) {
 	pstr->cores_acc[cores] += pstr->cores[i];
+	pstr->cores_cur[cores] = pstr->cores[i];
 	cores++;
     }
     pstr->using_cores = cores;
-    if (cores>pstr->peak_cores) {
+    if (cores > pstr->peak_cores) {
 	pstr->peak_cores = cores;
     }
     return true;
