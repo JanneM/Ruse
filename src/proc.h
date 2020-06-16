@@ -48,7 +48,7 @@ typedef struct {
 */
 
 bool
-read_RSS(int pid, int *parent);
+read_parent(int pid, int *parent);
 
 /* get all process pids on the system */
 

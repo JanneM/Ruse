@@ -23,7 +23,7 @@
 int syspagesize=0;
 
 bool
-read_RSS(int pid, int *parent) {
+read_parent(int pid, int *parent) {
 
     int res;
     char *line = NULL;
@@ -189,7 +189,7 @@ get_all_procs(procdata *procs, iarr *plist) {
     procc = 0;
     for (pidc = 0; pidc<elems; pidc++) {
 	pid = plist->ilist[pidc];
-	if ((read_RSS(pid, &(procs[procc].parent))) == true) {
+	if ((read_parent(pid, &(procs[procc].parent))) == true) {
 	    procs[procc].pid = pid;
 	    procc++;
 	}
