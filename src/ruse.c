@@ -149,16 +149,10 @@ main(int argc, char *argv[])
     sigset_t old_mask;
     
     /* system information */
-    cpu_set_t cpumask;
-    int res = sched_getaffinity(0, sizeof(cpu_set_t), &cpumask);
-    long totprocs = sysconf(_SC_NPROCESSORS_ONLN);
-    int nprocs = CPU_COUNT(&cpumask);
-    int jiffy = sysconf(_SC_CLK_TCK);
     pstruct *pstr;
     syspagesize = getpagesize()/KB;
 #ifdef DEBUG
-    printf("cores (total): %d (%ld)\n", nprocs, totprocs);
-    printf("jiffies: %d\npage size: %d\n", jiffy, syspagesize);
+    printf("   page size: %d\n", syspagesize);
 #endif
 
     /* block signals from the timer and the child until we're ready 
@@ -188,7 +182,7 @@ main(int argc, char *argv[])
     }
 
     /* We're the parent */
-    pstr = malloc(sizeof(pstruct));
+    pstr = create_pstruct();
     mem = get_RSS(pid, pstr);
     print_header(opts);
     print_steps(opts, mem, 0); 

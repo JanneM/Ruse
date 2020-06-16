@@ -75,6 +75,7 @@ create_pstruct() {
 	perror("create_pstruct");
 	return NULL;
     }
+
     f = fopen("/proc/uptime", "r");
     if (getline(&line, &len, f) == -1) {
 	fclose(f);
@@ -95,17 +96,22 @@ create_pstruct() {
     pstr->max_cores = CPU_COUNT(&cpumask);
     pstr->jiffy = sysconf(_SC_CLK_TCK);
 
+#ifdef DEBUG
+    printf("system cores: %ld\n", pstr->hw_cores);
+    printf("   max cores: %ld\n", pstr->max_cores);
+    printf("     jiffies: %d\n", pstr->jiffy);
+#endif
     pstr->proot = NULL; 
     if ((pstr->tstr = malloc(sizeof(t_struct)))==NULL) {
 	perror("create_pstruct");
 	return NULL;
     }
 
-    if ((pstr->cores = malloc(sizeof(float)*pstr->hw_cores))==NULL) {
+    if ((pstr->cores = malloc(sizeof(double)*(pstr->hw_cores)))==NULL) {
 	perror("create_pstruct");
 	return NULL;
     }
-    if ((pstr->cores_acc = malloc(sizeof(float)*pstr->hw_cores))==NULL) {
+    if ((pstr->cores_acc = malloc(sizeof(double)*(pstr->hw_cores)))==NULL) {
 	perror("create_pstruct");
 	return NULL;
     }

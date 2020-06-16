@@ -140,7 +140,6 @@ get_all_pids() {
     struct dirent *dir;
     size_t res;
     iarr *plist;
-
     if ((df = opendir("/proc")) == NULL){
 	perror("get_all_pids:");
 	// Should we possibly not fail here?
