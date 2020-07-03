@@ -72,4 +72,6 @@ add_thread(pstruct *pstr, int pid, unsigned long utime, int core);
 bool
 thread_summarize(pstruct *pstr);
 
+void
+print_tree(pstruct*pstr);
 #endif

@@ -24,8 +24,8 @@
 /* t_struct comparison function */
 static int tstruct_cmp(const void *p1, const void *p2) {
 
-    t_struct *s1 = (t_struct *)p1;
-    t_struct *s2 = (t_struct *)p2;
+    const t_struct *s1 = p1;
+    const t_struct *s2 = p2;
     if (s1->pid < s2->pid)
 	return -1;
     if (s1->pid > s2->pid)
@@ -53,11 +53,11 @@ tstruct_action(const void *nodep, VISIT which, int depth)
 	    break;
 	case postorder:
 	    datap = *(t_struct **) nodep;
-	    printf("%6d\t%6ld\n", (int)datap->pid, datap->utime);
+	    printf("tree: %6d\t%6ld (intl)\n", (int)datap->pid, datap->utime);
 	    break;
 	case leaf:
 	    datap = *(t_struct **) nodep;
-	    printf("%6d\t%6ld\n", (int)datap->pid, datap->utime);
+	    printf("tree: %6d\t%6ld (leaf)\n", (int)datap->pid, datap->utime);
 	    break;
     }
 }
@@ -70,6 +70,7 @@ create_pstruct() {
     FILE *f;
     char *line = NULL;
     size_t len = 0;
+    printf("create_pstruct\n");
 
     if ((pstr = malloc(sizeof(pstruct)))==NULL) {
 	perror("create_pstruct");
@@ -130,6 +131,7 @@ create_pstruct() {
     pstr->iter = 0;
 
 
+    printf("create_pstruct - exit\n");
     return pstr;
 }
 
@@ -141,6 +143,7 @@ do_thread_iter(pstruct *pstr) {
     char *line = NULL;
     size_t len = 0;
     double uptime;
+    printf("do_thread_iter\n");
 
     /* reset temporary core list */
     for (int i=0; i<pstr->hw_cores; i++) {
@@ -156,31 +159,50 @@ do_thread_iter(pstruct *pstr) {
     uptime = atof(line);
     pstr->dtime = uptime - pstr->ptime;
     pstr->ptime = uptime;
+    printf("do_thread_iter - exit\n");
     return true;
 }
 
 
 bool 
-add_thread(pstruct *pstr, int pid, unsigned long utime, int core) {
+add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
 
     void *res;
-    t_struct *tval = pstr->tstr;
+//    t_struct *tval = pstr->tstr;
+    t_struct *tval;
     t_struct *resval;
     unsigned long udiff;
+    printf("add_thread\n");
+
+    void *root =pstr->proot;
+    printf("bipp\n"); fflush(stdout);
+    if ((tval = calloc(sizeof(t_struct),1))==NULL) {
+	printf("failed creating tval\n");
+    }
 
     tval->pid = pid;
     tval->utime = 0;
-    res = tsearch((void *)tval, &(pstr->proot), tstruct_cmp);
+
+printf("** tval %ld %ld\n", tval->pid, tval->utime); fflush(stdout);
+printf("thread# %d\n", pid); fflush(stdout);
+
+    res = tsearch((void *)tval, &root, tstruct_cmp);
+
+printf("sfter tsearch\n"); fflush(stdout);
+
     if (res == NULL) {
 	return false;
     }
     resval = *(t_struct **) res;
+    printf ("res: %ld \ntval: %ld\n", resval, tval);
+    printf("thread res# %d, %ld\n", resval->pid, resval->utime);
+
     /* new entry */
     if (resval == tval) {
-	if ((pstr->tstr = malloc(sizeof(t_struct)))==NULL) {
-	    perror("add_thread");
-	    return false;
-	}
+        printf("new value\n");    
+    } else {
+        printf("yes, did find earlier val\n");    
+        free(tval);
     }
 
 //    tdiff = uptime - max(starttime, resval->uptime); 
@@ -188,6 +210,8 @@ add_thread(pstruct *pstr, int pid, unsigned long utime, int core) {
     
     udiff = utime - resval->utime;
     resval->utime = utime;
+    print_tree(pstr);
+//    printf("    udiff: %d\n", udiff);
     if (pstr->dtime>0.0) {
 	if (pstr->cores[core]<0.0) {
 	   pstr->cores[core] = udiff/pstr->dtime;
@@ -195,6 +219,7 @@ add_thread(pstruct *pstr, int pid, unsigned long utime, int core) {
 	   pstr->cores[core] += udiff/pstr->dtime;
 	}
     }
+    printf("add_thread - exit\n");
     return true;
 }
 
@@ -206,7 +231,11 @@ thread_summarize(pstruct *pstr) {
     int cmin=-1;
     int cmax=-1;
     int cores=0;
-
+    
+    printf("thread_summarize\n");
+    print_tree(pstr);
+return true;
+    
 
     for (int i=0; i<pstr->hw_cores; i++) {
 	if (cmin == -1 && pstr->cores[i]>=0.0) {
@@ -216,7 +245,7 @@ thread_summarize(pstruct *pstr) {
 	    cmax = i;
 	    break;
 	}
-
+        printf("core[%i]: %.4f\n", i, pstr->cores[i]);
     }
     // sort cores in place
     qsort(&(pstr->cores[cmin]), cmax-cmin, sizeof(double), double_cmp);
@@ -230,5 +259,14 @@ thread_summarize(pstruct *pstr) {
     if (cores > pstr->peak_cores) {
 	pstr->peak_cores = cores;
     }
+    printf("thread_summarize - exit\n");
     return true;
 }
+
+void
+print_tree(pstruct *pstr) {
+    
+    twalk( (pstr->proot), tstruct_action );
+
+}
+

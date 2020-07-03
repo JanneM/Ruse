@@ -186,7 +186,6 @@ main(int argc, char *argv[])
     mem = get_RSS(pid, pstr);
     print_header(opts);
     print_steps(opts, mem, 0); 
-
     set_signals(opts->time);
 
     while(1) {

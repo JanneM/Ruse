@@ -19,7 +19,7 @@
  */
 
 #include "proc.h"
-
+#include <errno.h>
 int syspagesize=0;
 
 bool
@@ -89,7 +89,7 @@ read_mem(int pid, size_t *rss) {
     }
     
     f = fopen(fname, "r");
-    
+    free(fname); 
     // pids may disappear. This is not an error
     if (!f) {
 	return false;
@@ -120,7 +120,7 @@ bool
 read_threads(int pid, pstruct *pstr) {
     int i;
     int res;
-    int tnum;
+    unsigned long tnum;
     
     char *line = NULL;
     size_t len=0;
@@ -132,6 +132,7 @@ read_threads(int pid, pstruct *pstr) {
     FILE *f;
     int core = -1;
     unsigned long utime = 0;
+    printf("--- read threads\n"); fflush(stdout);
 
     res = asprintf(&dname, "/proc/%i/task", pid);
     if (res == -1) {
@@ -153,8 +154,12 @@ read_threads(int pid, pstruct *pstr) {
 	    continue;
 	}
 	
-	tnum = atol(dir->d_name);
-    
+        errno = 0;
+	tnum = strtoul(dir->d_name, NULL, 10);
+        if (errno !=0 && tnum == 0) {
+            continue;
+        }
+
         res = asprintf(&fname, "/proc/%i/task/%i/stat", pid, tnum);
         if (res == -1) {
 	    fprintf(stderr, "Failed to convert proc file name\n");
@@ -162,21 +167,24 @@ read_threads(int pid, pstruct *pstr) {
         }
     
         f = fopen(fname, "r");
-        free(fname);
+        if (fname != NULL) {
+            free(fname);
+            fname = NULL;
+        }
     
         // pids may disappear. This is not an error.
         if (f == NULL) {
-	    return true;
+	    continue;
         }
 
         if (getline(&line, &len, f) == -1) {
             fclose(f);
+            free(line);
             fprintf(stderr, "Failed to read stat from '%d': %s\n", tnum, strerror(errno));
             return false;
         }
         
         char *line_tmp = line;
-
         for(i=0; i<39; i++) {
             field = strsep(&line_tmp, " ");
             switch(i) {
@@ -189,11 +197,10 @@ read_threads(int pid, pstruct *pstr) {
             }
         }
 
-        if(line)
-            free(line);
+        free(line);
 
         fclose(f);
-        add_thread(pstr, pid, utime, core); 
+        add_thread(pstr, tnum, utime, core); 
 
     } // readdir
 
@@ -317,9 +324,10 @@ get_RSS(int pid, pstruct *pstr) {
     for (int i=0; i<elems; i++) {
 	if (procs[i].pid == pid) {
 #ifdef DEBUG
-    printf("procs: %d ", pid);
+    printf("procs: %d ", pid); fflush(stdout);
 #endif
 	    read_mem(pid, &get_rss);
+
             read_threads(pid, pstr);
 	    rss = get_rss + get_RSS_r(pid, procs, elems, pstr);
 	    break;
