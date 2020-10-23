@@ -198,6 +198,8 @@ read_threads(int pid, pstruct *pstr) {
         }
 
         free(line);
+        line = NULL;
+        len = 0;
 
         fclose(f);
         add_thread(pstr, tnum, utime, core); 
