@@ -156,7 +156,8 @@ read_threads(int pid, pstruct *pstr) {
 	
         errno = 0;
 	tnum = strtoul(dir->d_name, NULL, 10);
-        if (errno !=0 && tnum == 0) {
+        // '.' and '..' convert to "valid" 0 values
+        if (errno !=0 || tnum == 0) {
             continue;
         }
 
