@@ -198,7 +198,6 @@ add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
     
     udiff = utime - resval->utime;
     resval->utime = utime;
-    print_tree(pstr);
 //    printf("    udiff: %d\n", udiff);
     if (pstr->dtime>0.0) {
 	if (pstr->cores[core]<0.0) {
@@ -220,7 +219,6 @@ thread_summarize(pstruct *pstr) {
     int cores=0;
     
     print_tree(pstr);
-return true;
     
 
     for (int i=0; i<pstr->hw_cores; i++) {
@@ -251,6 +249,7 @@ return true;
 void
 print_tree(pstruct *pstr) {
     
+    printf("--- tree ---\n");
     twalk( (pstr->proot), tstruct_action );
 }
 
