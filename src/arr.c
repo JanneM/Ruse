@@ -66,12 +66,85 @@ iarr_insert(iarr* arr, int val) {
     return true;
 }
 
+/* reset the element counter */
+bool
+iarr_reset(iarr *arr) {
+
+    arr->len = 0;
+    return true;
+}
 
 /* deallocate the iarr structure */
 void
 iarr_delete(iarr *arr) {
    
     free(arr->ilist);
+    free(arr);
+}
+
+/* 
+ * Create a new darr instance. 
+ * elems is the initial size. 
+ * NULL on failure.  
+ */
+darr*
+darr_create(unsigned int elems) {
+
+    darr *arr;
+    
+    if (elems<1) {
+	 elems = 1;
+    }
+
+    if ((arr = malloc(sizeof(darr)))==NULL) {
+	perror("darr_create");
+	return NULL;
+    }
+    arr->len = 0;
+    arr->anr = elems;
+
+    if ((arr->dlist = malloc(arr->anr*sizeof(double)))==NULL) {
+	perror("darr_create");
+	free(arr);
+	return NULL;
+    }
+    
+    return arr;
+}
+
+
+/* Insert value 'val'. true on success. */
+bool
+darr_insert(darr* arr, double val) {
+
+    if (arr->len == arr->anr) {
+	arr->anr = (int)(arr->anr*1.5);
+	double *tmp;
+	if ((tmp = realloc(arr->dlist, arr->anr*sizeof(double))) == NULL) {
+	    perror("darr_insert");
+	    return false;
+	}
+	arr->dlist = tmp;
+    }
+
+    arr->dlist[arr->len] = val;
+    arr->len++;
+    return true;
+}
+
+/* reset the element counter */
+bool
+darr_reset(darr *arr) {
+
+    arr->len = 0;
+    return true;
+}
+
+/* deallocate the darr structure */
+void
+darr_delete(darr *arr) {
+   
+    free(arr->dlist);
     free(arr);
 }
 
