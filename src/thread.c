@@ -96,9 +96,9 @@ create_pstruct() {
     pstr->max_cores = CPU_COUNT(&cpumask);
     pstr->jiffy = sysconf(_SC_CLK_TCK);
 
-#ifdef DEBUG
+#ifndef DEBUG
     printf("system cores: %ld\n", pstr->hw_cores);
-    printf("   max cores: %ld\n", pstr->max_cores);
+    printf("   max cores: %d\n", pstr->max_cores);
     printf("     jiffies: %d\n", pstr->jiffy);
 #endif
     pstr->proot = NULL; 
@@ -182,14 +182,14 @@ add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
 	return false;
     }
     resval = *(t_struct **) res;
-    printf ("res: %ld \ntval: %ld\n", resval, tval);
-    printf("thread res# %d, %ld\n", resval->pid, resval->utime);
+    //printf ("res: %ld \ntval: %ld\n", resval, tval);
+    //printf("thread res# %d, %ld\n", resval->pid, resval->utime);
 
     /* new entry */
     if (resval == tval) {
-        printf("new value\n");    
+        //printf("new value\n");    
     } else {
-        printf("yes, did find earlier val\n");    
+        //printf("yes, did find earlier val\n");    
         free(tval);
     }
 
@@ -198,7 +198,7 @@ add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
     
     udiff = utime - resval->utime;
     resval->utime = utime;
-//    printf("    udiff: %d\n", udiff);
+    printf("    udiff: %ld - core: %d\n", udiff, core);
     if (pstr->dtime>0.0) {
 	if (pstr->cores[core]<0.0) {
 	   pstr->cores[core] = udiff/pstr->dtime;
@@ -225,17 +225,20 @@ thread_summarize(pstruct *pstr) {
 	if (cmin == -1 && pstr->cores[i]>=0.0) {
 	    cmin = i;
 	}
-	if (cmin > -1 && cmax == -1 && pstr->cores[i]<0.0) {
-	    cmax = i;
-	    break;
+	if (cmin > -1 && pstr->cores[i]>=0.0) {
+	    cmax = i+1;
 	}
         printf("core[%i]: %.4f\n", i, pstr->cores[i]);
     }
+    //printf("%i - %i\n", cmin, cmax);
     // sort cores in place
     qsort(&(pstr->cores[cmin]), cmax-cmin, sizeof(double), double_cmp);
-    
-    for (int i=cmin; i<(cmax-cmin); i++) {
-	pstr->cores_acc[cores] += pstr->cores[i];
+     
+    for (int i=cmin; i<cmax; i++) {
+        if (pstr->cores[i]<0.0) {
+            continue;
+        }
+        pstr->cores_acc[cores] += pstr->cores[i];
 	pstr->cores_cur[cores] = pstr->cores[i];
 	cores++;
     }

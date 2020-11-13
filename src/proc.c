@@ -132,6 +132,7 @@ read_threads(int pid, pstruct *pstr) {
     FILE *f;
     int core = -1;
     unsigned long utime = 0;
+//    char state[3];
     printf("--- read threads\n"); fflush(stdout);
 
     res = asprintf(&dname, "/proc/%i/task", pid);
@@ -161,7 +162,7 @@ read_threads(int pid, pstruct *pstr) {
             continue;
         }
 
-        res = asprintf(&fname, "/proc/%i/task/%i/stat", pid, tnum);
+        res = asprintf(&fname, "/proc/%i/task/%li/stat", pid, tnum);
         if (res == -1) {
 	    fprintf(stderr, "Failed to convert proc file name\n");
 	    return false;
@@ -181,14 +182,18 @@ read_threads(int pid, pstruct *pstr) {
         if (getline(&line, &len, f) == -1) {
             fclose(f);
             free(line);
-            fprintf(stderr, "Failed to read stat from '%d': %s\n", tnum, strerror(errno));
+            fprintf(stderr, "Failed to read stat from '%ld': %s\n", tnum, strerror(errno));
             return false;
         }
         
         char *line_tmp = line;
+        core=-1;
         for(i=0; i<39; i++) {
             field = strsep(&line_tmp, " ");
             switch(i) {
+//                case 2:
+//                    strncpy(state, field, 2);
+//                    continue;
                 case 13:	// execute time
                     utime = atol(field);
                     continue;
@@ -203,6 +208,8 @@ read_threads(int pid, pstruct *pstr) {
         len = 0;
 
         fclose(f);
+        //printf("** state: %s \tutime: %ld \tcore: %d\n", state, utime, core);
+        printf("** utime: %ld \tcore: %d\n", utime, core);
         add_thread(pstr, tnum, utime, core); 
 
     } // readdir
