@@ -92,8 +92,8 @@ darr_create(unsigned int elems) {
 
     darr *arr;
     
-    if (elems<1) {
-	 elems = 1;
+    if (elems<4) {
+	 elems = 4;
     }
 
     if ((arr = malloc(sizeof(darr)))==NULL) {

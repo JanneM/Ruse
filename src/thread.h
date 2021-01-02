@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <search.h>
 #include <string.h>
+#include "arr.h"
 
 typedef struct {
     pid_t pid;
@@ -47,6 +48,9 @@ typedef struct {
     unsigned int max_cores;	    // number of allocated cores
     unsigned int using_cores;	    // number of cores used this iteration
     unsigned int peak_cores;	    // peak number of cores
+
+    darr *proc_cur;                 // current process use
+    darr *proc_acc;                 // accumulated process use     
     unsigned int iter;		    // iterations
    
     int jiffy;

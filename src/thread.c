@@ -107,6 +107,10 @@ create_pstruct() {
 	return NULL;
     }
 
+    // process usage for current interation, and total accumulated
+    pstr->proc_cur = darr_create(1);
+    pstr->proc_acc = darr_create(1);
+
     if ((pstr->cores = malloc(sizeof(double)*(pstr->hw_cores)))==NULL) {
 	perror("create_pstruct");
 	return NULL;
@@ -140,6 +144,9 @@ do_thread_iter(pstruct *pstr) {
     char *line = NULL;
     size_t len = 0;
     double uptime;
+
+    /* reset process list */
+    darr_reset(pstr->proc_cur);
 
     /* reset temporary core list */
     for (int i=0; i<pstr->hw_cores; i++) {
@@ -199,6 +206,11 @@ add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
     udiff = utime - resval->utime;
     resval->utime = utime;
     printf("    udiff: %ld - core: %d\n", udiff, core);
+
+    if (pstr->dtime>0.0) {
+        darr_insert(pstr->proc_cur, udiff/pstr->dtime);
+    }
+    
     if (pstr->dtime>0.0) {
 	if (pstr->cores[core]<0.0) {
 	   pstr->cores[core] = udiff/pstr->dtime;
@@ -228,12 +240,30 @@ thread_summarize(pstruct *pstr) {
 	if (cmin > -1 && pstr->cores[i]>=0.0) {
 	    cmax = i+1;
 	}
-        printf("core[%i]: %.4f\n", i, pstr->cores[i]);
+//        printf("core[%i]: %.4f\n", i, pstr->cores[i]);
+    }
+
+    for (int i=0; i<pstr->proc_cur->len; i++) {
+        printf("proc[%i]: %.4f\n", i, pstr->proc_cur->dlist[i]);
     }
     //printf("%i - %i\n", cmin, cmax);
     // sort cores in place
     qsort(&(pstr->cores[cmin]), cmax-cmin, sizeof(double), double_cmp);
-     
+    
+    // sort process use
+    qsort(pstr->proc_cur->dlist, pstr->proc_cur->len, sizeof(double), double_cmp);
+    
+    int pdiff;
+    if ((pdiff = pstr->proc_cur->len - pstr->proc_acc->len)>0) {
+        for (int i=0; i<pdiff; i++) {
+            darr_insert(pstr->proc_acc, 0.0);
+        }
+    }
+
+    for (int i=0; i<pstr->proc_cur->len; i++) {
+        pstr->proc_acc->dlist[i] += pstr->proc_cur->dlist[i];
+    }
+
     for (int i=cmin; i<cmax; i++) {
         if (pstr->cores[i]<0.0) {
             continue;

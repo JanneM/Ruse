@@ -211,6 +211,11 @@ main(int argc, char *argv[])
                 }
                 printf("\n");
 
+                for (int i=0; i < pstr->proc_acc->len; i++) {
+                    printf("%.0f\t ", pstr->proc_acc->dlist[i]);
+                }
+                printf("\n");
+
 	    }
 	/* Child disappeared. Finish this. */ 
 	} else if (sigtype == SIGCHLD) {
