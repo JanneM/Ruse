@@ -185,7 +185,7 @@ main(int argc, char *argv[])
     pstr = create_pstruct();
     mem = get_RSS(pid, pstr);
     print_header(opts);
-    print_steps(opts, mem, 0); 
+    print_steps(opts, mem, pstr, 0); 
     set_signals(opts->time);
 
     while(1) {
@@ -204,17 +204,7 @@ main(int argc, char *argv[])
 
 	    if (opts->steps) {
 		time(&t2);
-		print_steps(opts, rssmem, (t2-t1));
-                printf("cores: %d - ", pstr->using_cores);
-                for (int i=0; i < pstr->using_cores; i++) {
-                    printf("%f\t ",pstr->cores_cur[i]);
-                }
-                printf("\n");
-
-                for (int i=0; i < pstr->proc_acc->len; i++) {
-                    printf("%.0f\t ", pstr->proc_acc->dlist[i]);
-                }
-                printf("\n");
+		print_steps(opts, rssmem, pstr, (t2-t1));
 
 	    }
 	/* Child disappeared. Finish this. */ 
@@ -234,7 +224,7 @@ main(int argc, char *argv[])
     int status;
     waitpid(pid, &status, 0);
     if (!opts->nosum) {
-	print_summary(opts, mem, runtime);
+	print_summary(opts, mem, pstr, runtime);
     }
     if (!opts->nofile) {
 	fclose(opts->fhandle);

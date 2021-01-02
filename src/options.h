@@ -36,6 +36,7 @@
 typedef struct {
     bool verbose;
     bool steps;
+    bool procs;
     unsigned int time;
     char *label;
     bool nofile;

@@ -133,7 +133,7 @@ read_threads(int pid, pstruct *pstr) {
     int core = -1;
     unsigned long utime = 0;
 //    char state[3];
-    printf("--- read threads\n"); fflush(stdout);
+//    printf("--- read threads\n"); fflush(stdout);
 
     res = asprintf(&dname, "/proc/%i/task", pid);
     if (res == -1) {
@@ -209,7 +209,7 @@ read_threads(int pid, pstruct *pstr) {
 
         fclose(f);
         //printf("** state: %s \tutime: %ld \tcore: %d\n", state, utime, core);
-        printf("** utime: %ld \tcore: %d\n", utime, core);
+//        printf("** utime: %ld \tcore: %d\n", utime, core);
         add_thread(pstr, tnum, utime, core); 
 
     } // readdir

@@ -24,14 +24,15 @@
 #define OUTPUT_H
 #include <math.h>
 #include "options.h"
+#include "thread.h"
 
 void
-print_steps(options *opts, size_t memory, int ts);
+print_steps(options *opts, size_t memory, pstruct *pstr, int ts);
 
 void
 print_header(options *opts);
 
 void
-print_summary(options *opts, size_t memory, int ts);
+print_summary(options *opts, size_t memory, pstruct *pstr, int ts);
 
 #endif

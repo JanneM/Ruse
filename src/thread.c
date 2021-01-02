@@ -96,7 +96,7 @@ create_pstruct() {
     pstr->max_cores = CPU_COUNT(&cpumask);
     pstr->jiffy = sysconf(_SC_CLK_TCK);
 
-#ifndef DEBUG
+#ifdef DEBUG
     printf("system cores: %ld\n", pstr->hw_cores);
     printf("   max cores: %d\n", pstr->max_cores);
     printf("     jiffies: %d\n", pstr->jiffy);
@@ -205,7 +205,7 @@ add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
     
     udiff = utime - resval->utime;
     resval->utime = utime;
-    printf("    udiff: %ld - core: %d\n", udiff, core);
+//    printf("    udiff: %ld - core: %d\n", udiff, core);
 
     if (pstr->dtime>0.0) {
         darr_insert(pstr->proc_cur, udiff/pstr->dtime);
@@ -230,7 +230,7 @@ thread_summarize(pstruct *pstr) {
     int cmax=-1;
     int cores=0;
     
-    print_tree(pstr);
+//    print_tree(pstr);
     
 
     for (int i=0; i<pstr->hw_cores; i++) {
@@ -243,9 +243,9 @@ thread_summarize(pstruct *pstr) {
 //        printf("core[%i]: %.4f\n", i, pstr->cores[i]);
     }
 
-    for (int i=0; i<pstr->proc_cur->len; i++) {
+/*    for (int i=0; i<pstr->proc_cur->len; i++) {
         printf("proc[%i]: %.4f\n", i, pstr->proc_cur->dlist[i]);
-    }
+    }*/
     //printf("%i - %i\n", cmin, cmax);
     // sort cores in place
     qsort(&(pstr->cores[cmin]), cmax-cmin, sizeof(double), double_cmp);

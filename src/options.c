@@ -52,6 +52,7 @@ get_options(int *argc, char **argv[]) {
 
     opts->verbose = false;
     opts->steps   = false;
+    opts->procs   = true;
     opts->time    = 30;
     opts->nohead  = false;
     opts->nofile  = false;
