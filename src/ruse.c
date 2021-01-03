@@ -47,12 +47,12 @@
 #define CLOCKID CLOCK_REALTIME
 #define SIG SIGUSR1
 
-#ifdef DEBUG
+/* measure time difference for debugging */
 double time_diff_micro(struct timespec *toc, struct timespec *tic) {
     return (1e6*(toc->tv_sec-tic->tv_sec)+
 	    (toc->tv_nsec-tic->tv_nsec)/1e3);
 }
-#endif
+
 
 /* Our defined timer */
 timer_t timerid;
@@ -105,7 +105,7 @@ set_signals(int sectime) {
 	sigaction(SIGQUIT, &sa_chld, NULL) == -1 ||
 	sigaction(SIGTERM, &sa_chld, NULL) == -1) {
 
-	perror("set signals: sighandler");
+	error(0,errno, "set signals: sighandler");
 	exit(EXIT_FAILURE);
     }
 
@@ -114,7 +114,7 @@ set_signals(int sectime) {
     sa_time.sa_sigaction = sighandler;
     sigemptyset(&sa_time.sa_mask);
     if (sigaction(SIG, &sa_time, NULL) == -1) {
-	perror("set_signals: timer");
+	error(0,errno, "set_signals: timer");
 	exit(EXIT_FAILURE);
     }
 
@@ -123,7 +123,7 @@ set_signals(int sectime) {
     sev.sigev_signo = SIG;
     sev.sigev_value.sival_ptr = &timerid;
     if (timer_create(CLOCKID, &sev, &timerid) == -1) {
-	perror("set_signals: timer_create");
+	error(0,errno, "set_signals: timer_create");
 	exit(EXIT_FAILURE);
     }
 
@@ -133,7 +133,7 @@ set_signals(int sectime) {
     its.it_interval.tv_sec = its.it_value.tv_sec;
     its.it_interval.tv_nsec = its.it_value.tv_nsec;
     if (timer_settime(timerid, 0, &its, NULL) == -1){
-	perror("set_signals: timer_settime");
+	error(0,errno, "set_signals: timer_settime");
 	exit(EXIT_FAILURE);
     }
 }
@@ -143,12 +143,12 @@ main(int argc, char *argv[])
 {
     
     time_t t1,t2;
-    size_t mem = 0;
+    size_t maxmem = 0;
     size_t rssmem = 0;
     sigset_t mask;
     sigset_t old_mask;
     
-    /* system information */
+    /* process and system information */
     pstruct *pstr;
     syspagesize = getpagesize()/KB;
 #ifdef DEBUG
@@ -177,18 +177,19 @@ main(int argc, char *argv[])
     {
 	/* We're the child */
 	execvp(argv[0], &argv[0]);
-	perror("execvp() failed");
+	error(0,errno, "execvp() failed");
 	exit(EXIT_FAILURE);
     }
 
     /* We're the parent */
     pstr = create_pstruct();
-    mem = get_RSS(pid, pstr);
+    maxmem = get_RSS(pid, pstr);
     print_header(opts);
-    print_steps(opts, mem, pstr, 0); 
+    print_steps(opts, maxmem, pstr, 0); 
     set_signals(opts->time);
 
     while(1) {
+
 	sigsuspend(&old_mask);
 
 	if (sigtype == SIG) {
@@ -200,7 +201,7 @@ main(int argc, char *argv[])
 	    clock_gettime(CLOCK_REALTIME, &toc);
 	    printf("mem: %li %.2fms\n", rssmem, time_diff_micro(&toc, &tic)/1000.0);
 #endif
-	    mem = MAX(mem, rssmem); 
+	    maxmem = MAX(maxmem, rssmem); 
 
 	    if (opts->steps) {
 		time(&t2);
@@ -224,7 +225,7 @@ main(int argc, char *argv[])
     int status;
     waitpid(pid, &status, 0);
     if (!opts->nosum) {
-	print_summary(opts, mem, pstr, runtime);
+	print_summary(opts, maxmem, pstr, runtime);
     }
     if (!opts->nofile) {
 	fclose(opts->fhandle);

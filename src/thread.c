@@ -20,7 +20,6 @@
 
 #include "thread.h"
 
-
 /* t_struct comparison function */
 static int tstruct_cmp(const void *p1, const void *p2) {
 
@@ -32,6 +31,7 @@ static int tstruct_cmp(const void *p1, const void *p2) {
 	return 1; 
     return 0;
 }
+
 /* note: sorting in reverse order */
 int
 double_cmp (const void *a, const void *b)
@@ -42,7 +42,9 @@ double_cmp (const void *a, const void *b)
   return (*da < *db) - (*da > *db);
 }
 
-/* tree traversal callback */
+/* tree traversal callback 
+ * used for debuging only.
+ */
 static void
 tstruct_action(const void *nodep, VISIT which, int depth)
 {
@@ -72,14 +74,17 @@ create_pstruct() {
     size_t len = 0;
 
     if ((pstr = malloc(sizeof(pstruct)))==NULL) {
-	perror("create_pstruct");
+	error(0,errno, "create_pstruct: allocate pstruct");
 	return NULL;
     }
 
-    f = fopen("/proc/uptime", "r");
+    if ((f = fopen("/proc/uptime", "r"))==NULL) {
+	error(0,errno, "create_pstruct: Failed to open '/proc/uptime'");
+        return false;
+    }
     if (getline(&line, &len, f) == -1) {
 	fclose(f);
-	fprintf(stderr, "Failed to read '/proc/uptime': %s\n", strerror(errno));
+	error(0, errno, "Failed to read '/proc/uptime'");
 	return NULL;
     }
     pstr->ptime = atof(line);
@@ -89,7 +94,7 @@ create_pstruct() {
     cpu_set_t cpumask;
     int res;
     if ((res = sched_getaffinity(0, sizeof(cpu_set_t), &cpumask))==-1) {
-	perror("create_pstruct");
+	error(0,errno, "create_pstruct: get affinity mask");
 	return NULL;
     }
     pstr->hw_cores = sysconf(_SC_NPROCESSORS_ONLN);
@@ -103,34 +108,15 @@ create_pstruct() {
 #endif
     pstr->proot = NULL; 
     if ((pstr->tstr = malloc(sizeof(t_struct)))==NULL) {
-	perror("create_pstruct");
+	error(0,errno, "create_pstruct: allocate t_struct");
 	return NULL;
     }
 
-    // process usage for current interation, and total accumulated
-    pstr->proc_cur = darr_create(1);
-    pstr->proc_acc = darr_create(1);
+    /* process usage for current interation, and total 
+     * accumulated usage */
+    pstr->proc_cur = darr_create(4);
+    pstr->proc_acc = darr_create(4);
 
-    if ((pstr->cores = malloc(sizeof(double)*(pstr->hw_cores)))==NULL) {
-	perror("create_pstruct");
-	return NULL;
-    }
-    if ((pstr->cores_acc = malloc(sizeof(double)*(pstr->hw_cores)))==NULL) {
-	perror("create_pstruct");
-	return NULL;
-    }
-    if ((pstr->cores_cur = malloc(sizeof(double)*(pstr->hw_cores)))==NULL) {
-	perror("create_pstruct");
-	return NULL;
-    }
-    /* initialize core lists */
-    for (int i=0; i<pstr->hw_cores; i++) {
-	pstr->cores[i] = -1.0;
-	pstr->cores_acc[i] = 0.0;
-	pstr->cores_cur[i] = 0.0;
-    }
-    pstr->using_cores = 0;
-    pstr->peak_cores = 0;
     pstr->iter = 0;
 
     return pstr;
@@ -148,17 +134,17 @@ do_thread_iter(pstruct *pstr) {
     /* reset process list */
     darr_reset(pstr->proc_cur);
 
-    /* reset temporary core list */
-    for (int i=0; i<pstr->hw_cores; i++) {
-	pstr->cores[i]=-1.0;
-	pstr->cores_cur[i]=0.0;
+    if ((f = fopen("/proc/uptime", "r"))==NULL) {
+	error(0,errno, "Failed to open '/proc/uptime'");
+        return false;
     }
-    f = fopen("/proc/uptime", "r");
+        
     if (getline(&line, &len, f) == -1) {
 	fclose(f);
-	fprintf(stderr, "Failed to read '/proc/uptime': %s\n", strerror(errno));
+	error(0,errno, "Failed to read '/proc/uptime'");
 	return false;
     }
+
     uptime = atof(line);
     pstr->dtime = uptime - pstr->ptime;
     pstr->ptime = uptime;
@@ -166,18 +152,17 @@ do_thread_iter(pstruct *pstr) {
     return true;
 }
 
-
+/* add or update a thread/process in our collection.*/ 
 bool 
 add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
 
     void *res;
-//    t_struct *tval = pstr->tstr;
     t_struct *tval;
     t_struct *resval;
     unsigned long udiff;
 
     if ((tval = calloc(sizeof(t_struct),1))==NULL) {
-	printf("failed creating tval\n");
+	error(0,errno, "failed creating tval:");
     }
 
     tval->pid = pid;
@@ -185,70 +170,44 @@ add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
 
     res = tsearch((void *)tval, &(pstr->proot), tstruct_cmp);
 
+    /* should never actually happen - tsearch always returns 
+     * a valid result */
     if (res == NULL) {
 	return false;
     }
     resval = *(t_struct **) res;
-    //printf ("res: %ld \ntval: %ld\n", resval, tval);
-    //printf("thread res# %d, %ld\n", resval->pid, resval->utime);
 
-    /* new entry */
-    if (resval == tval) {
-        //printf("new value\n");    
-    } else {
-        //printf("yes, did find earlier val\n");    
+#ifdef DEBUG
+    printf ("res: %ld \ntval: %ld\n", resval, tval);
+    printf("thread res# %d, %ld\n", resval->pid, resval->utime);
+#endif
+
+    /* old entry, so deallocate our temporary struct */
+    if (resval != tval) {
         free(tval);
     }
-
-//    tdiff = uptime - max(starttime, resval->uptime); 
-//    tdiff = uptime - resval->uptime;
     
     udiff = utime - resval->utime;
     resval->utime = utime;
-//    printf("    udiff: %ld - core: %d\n", udiff, core);
 
+    /* if we haven't just started, fill a list of time spent running 
+     * since last iteration */
     if (pstr->dtime>0.0) {
         darr_insert(pstr->proc_cur, udiff/pstr->dtime);
     }
     
-    if (pstr->dtime>0.0) {
-	if (pstr->cores[core]<0.0) {
-	   pstr->cores[core] = udiff/pstr->dtime;
-	} else {
-	   pstr->cores[core] += udiff/pstr->dtime;
-	}
-    }
     return true;
 }
 
-// get a sorted list and number of members
+/* get a sorted list and number of members */
 bool
 thread_summarize(pstruct *pstr) {
     
     pstr->iter++;
-    int cmin=-1;
-    int cmax=-1;
-    int cores=0;
-    
-//    print_tree(pstr);
-    
 
-    for (int i=0; i<pstr->hw_cores; i++) {
-	if (cmin == -1 && pstr->cores[i]>=0.0) {
-	    cmin = i;
-	}
-	if (cmin > -1 && pstr->cores[i]>=0.0) {
-	    cmax = i+1;
-	}
-//        printf("core[%i]: %.4f\n", i, pstr->cores[i]);
-    }
-
-/*    for (int i=0; i<pstr->proc_cur->len; i++) {
-        printf("proc[%i]: %.4f\n", i, pstr->proc_cur->dlist[i]);
-    }*/
-    //printf("%i - %i\n", cmin, cmax);
-    // sort cores in place
-    qsort(&(pstr->cores[cmin]), cmax-cmin, sizeof(double), double_cmp);
+#ifdef DEBUG
+    print_tree(pstr);
+#endif    
     
     // sort process use
     qsort(pstr->proc_cur->dlist, pstr->proc_cur->len, sizeof(double), double_cmp);
@@ -264,21 +223,10 @@ thread_summarize(pstruct *pstr) {
         pstr->proc_acc->dlist[i] += pstr->proc_cur->dlist[i];
     }
 
-    for (int i=cmin; i<cmax; i++) {
-        if (pstr->cores[i]<0.0) {
-            continue;
-        }
-        pstr->cores_acc[cores] += pstr->cores[i];
-	pstr->cores_cur[cores] = pstr->cores[i];
-	cores++;
-    }
-    pstr->using_cores = cores;
-    if (cores > pstr->peak_cores) {
-	pstr->peak_cores = cores;
-    }
     return true;
 }
 
+/* print tree of tracker processes. used for debugging. */
 void
 print_tree(pstruct *pstr) {
     

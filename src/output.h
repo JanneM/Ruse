@@ -26,12 +26,15 @@
 #include "options.h"
 #include "thread.h"
 
+/* output one iteration data */
 void
 print_steps(options *opts, size_t memory, pstruct *pstr, int ts);
 
+/* print header info */
 void
 print_header(options *opts);
 
+/* print the final summary */
 void
 print_summary(options *opts, size_t memory, pstruct *pstr, int ts);
 

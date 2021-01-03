@@ -26,56 +26,54 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <error.h>
 #include <errno.h>
 #include <stdio.h>
 #include <search.h>
 #include <string.h>
 #include "arr.h"
 
+/* tree node structure */
 typedef struct {
-    pid_t pid;
-    unsigned long utime;
+    pid_t pid;                      // process PID
+    unsigned long utime;            // time at last update
 } t_struct;
 
 typedef struct {
-    void *proot;
-    t_struct *tstr;
+    void *proot;                    // process tree root    
+    t_struct *tstr;                 // tree node structure
 
-    double *cores;		    // array of temporary cores
-    double *cores_cur;		    // array of current cores
-    double *cores_acc;		    // array of accumulated cores
     long int hw_cores;		    // number of available cores in hardware
     unsigned int max_cores;	    // number of allocated cores
-    unsigned int using_cores;	    // number of cores used this iteration
-    unsigned int peak_cores;	    // peak number of cores
 
     darr *proc_cur;                 // current process use
     darr *proc_acc;                 // accumulated process use     
     unsigned int iter;		    // iterations
    
-    int jiffy;
-    double ptime;
-    double dtime;
+    int jiffy;                      // jiffies. Not currently used
+    double ptime;                   // current time since start
+    double dtime;                   // time since last iteration
 } pstruct;
 
 
-// Create a process tree and a core list
+/* Create a process tree and a process list */
 pstruct * 
 create_pstruct();
 
 
-// reset core list for the next iteration
+/* reset process list for the next iteration */
 bool 
 do_thread_iter(pstruct *pstr);
 
-// query/add a process to the tree, and update core list
+/* query/add a process to the tree, and poopulate process list */
 bool
 add_thread(pstruct *pstr, int pid, unsigned long utime, int core);
 
-// get a sorted list and number of members
+/* get a sorted process list, update accumulated process time */
 bool
 thread_summarize(pstruct *pstr);
 
+/* print out the current tree. For debugging. */
 void
 print_tree(pstruct *pstr);
 #endif

@@ -1,4 +1,4 @@
-/* proc.c - helper functions for the /proc filesystem
+/* proc.c - read /proc filesystem info
  *
  * Copyright 2017 Jan Moren
  *
@@ -22,6 +22,9 @@
 #include <errno.h>
 int syspagesize=0;
 
+/* extract the current RSS (resident set size) and parent process for
+ * process pid.  If the pid does not exist, return -1
+*/
 bool
 read_parent(int pid, int *parent) {
 
@@ -34,7 +37,7 @@ read_parent(int pid, int *parent) {
 
     res = asprintf(&fname, "/proc/%i/stat", pid);
     if (res == -1) {
-	fprintf(stderr, "Failed to convert proc file name\n");
+	error(0,0, "Failed to convert proc file name\n");
 	return false;
     }
     
@@ -47,7 +50,7 @@ read_parent(int pid, int *parent) {
 
     if (getline(&line, &len, f) == -1) {
 	fclose(f);
-	fprintf(stderr, "Failed to read '%s': %s\n", fname, strerror(errno));
+	error(0, errno, "Failed to read '%s'", fname);
 	return false;
     }
     
@@ -71,6 +74,7 @@ read_parent(int pid, int *parent) {
     return true;
 }
 
+/* read current actually used memory */
 bool
 read_mem(int pid, size_t *rss) {
 
@@ -84,7 +88,7 @@ read_mem(int pid, size_t *rss) {
 
     res = asprintf(&fname, "/proc/%i/stat", pid);
     if (res == -1) {
-	fprintf(stderr, "Failed to convert proc file name\n");
+	error(0,0, "Failed to convert proc file name\n");
 	return false;
     }
     
@@ -97,7 +101,7 @@ read_mem(int pid, size_t *rss) {
 
     if (getline(&line, &len, f) == -1) {
 	fclose(f);
-	fprintf(stderr, "Failed to read '%s': %s\n", fname, strerror(errno));
+	error(0, errno, "Failed to read '%s'", fname);
 	return false;
     }
     
@@ -116,6 +120,7 @@ read_mem(int pid, size_t *rss) {
     return true;
 }
 
+/* read thread/process usage */
 bool
 read_threads(int pid, pstruct *pstr) {
     int i;
@@ -132,19 +137,16 @@ read_threads(int pid, pstruct *pstr) {
     FILE *f;
     int core = -1;
     unsigned long utime = 0;
-//    char state[3];
-//    printf("--- read threads\n"); fflush(stdout);
 
     res = asprintf(&dname, "/proc/%i/task", pid);
     if (res == -1) {
-	fprintf(stderr, "Failed to create task dir name\n");
+	error(0,0, "Failed to create task dir name\n");
 	return false;
     }
     df = opendir(dname);
     free(dname);
 
     if (df == NULL) {
-	perror("read threads:");
 	// processes may suddenly disappear. This is not a failure.
 	return true;
     }
@@ -164,7 +166,7 @@ read_threads(int pid, pstruct *pstr) {
 
         res = asprintf(&fname, "/proc/%i/task/%li/stat", pid, tnum);
         if (res == -1) {
-	    fprintf(stderr, "Failed to convert proc file name\n");
+	    error(0,0, "Failed to convert proc file name\n");
 	    return false;
         }
     
@@ -182,7 +184,7 @@ read_threads(int pid, pstruct *pstr) {
         if (getline(&line, &len, f) == -1) {
             fclose(f);
             free(line);
-            fprintf(stderr, "Failed to read stat from '%ld': %s\n", tnum, strerror(errno));
+            error(0, errno, "Failed to read stat from '%ld'", tnum);
             return false;
         }
         
@@ -208,8 +210,6 @@ read_threads(int pid, pstruct *pstr) {
         len = 0;
 
         fclose(f);
-        //printf("** state: %s \tutime: %ld \tcore: %d\n", state, utime, core);
-//        printf("** utime: %ld \tcore: %d\n", utime, core);
         add_thread(pstr, tnum, utime, core); 
 
     } // readdir
@@ -226,8 +226,7 @@ get_all_pids() {
     size_t res;
     iarr *plist;
     if ((df = opendir("/proc")) == NULL){
-	perror("get_all_pids:");
-	// Should we possibly not fail here?
+	error(0,errno, "get_all_pids:");
 	exit(EXIT_FAILURE);
     }
 
@@ -258,7 +257,7 @@ get_all_pids() {
     return plist;
 }
 
-
+/* get all procs on the system */
 int
 get_all_procs(procdata *procs, iarr *plist) {
   
@@ -267,8 +266,6 @@ get_all_procs(procdata *procs, iarr *plist) {
     int pid;
 	
     elems = plist->len;
-
-    // look up, fill in data for all procs
     
     pidc = 0;
     procc = 0;
@@ -282,6 +279,7 @@ get_all_procs(procdata *procs, iarr *plist) {
     return procc;
 }
 
+/* Get total RSS and process usage for process tree rooted in pid */
 size_t
 get_RSS_r(int pid, procdata *p, int l, pstruct *pstr) {
     
@@ -302,6 +300,7 @@ get_RSS_r(int pid, procdata *p, int l, pstruct *pstr) {
 }
 
 
+/* Get total RSS and process usage for process tree rooted in pid */
 size_t
 get_RSS(int pid, pstruct *pstr) {
 
@@ -321,7 +320,7 @@ get_RSS(int pid, pstruct *pstr) {
     }
 
     if ((procs = calloc(plist->len, sizeof(procdata))) == NULL) {
-	perror("get_all_procs");
+	error(0,errno, "get_all_procs");
 	exit(EXIT_FAILURE);
     }
 

@@ -31,14 +31,14 @@ iarr_create(unsigned int elems) {
     }
 
     if ((arr = malloc(sizeof(iarr)))==NULL) {
-	perror("iarr_create");
+	error(0,errno, "iarr_create");
 	return NULL;
     }
     arr->len = 0;
     arr->anr = elems;
 
     if ((arr->ilist = malloc(arr->anr*sizeof(int)))==NULL) {
-	perror("iarr_create");
+	error(0,errno, "iarr_create");
 	free(arr);
 	return NULL;
     }
@@ -55,7 +55,7 @@ iarr_insert(iarr* arr, int val) {
 	arr->anr = (int)(arr->anr*1.5);
 	int *tmp;
 	if ((tmp = realloc(arr->ilist, arr->anr*sizeof(int))) == NULL) {
-	    perror("iarr_insert");
+	    error(0,errno, "iarr_insert");
 	    return false;
 	}
 	arr->ilist = tmp;
@@ -97,14 +97,14 @@ darr_create(unsigned int elems) {
     }
 
     if ((arr = malloc(sizeof(darr)))==NULL) {
-	perror("darr_create");
+	error(0,errno, "darr_create");
 	return NULL;
     }
     arr->len = 0;
     arr->anr = elems;
 
     if ((arr->dlist = malloc(arr->anr*sizeof(double)))==NULL) {
-	perror("darr_create");
+	error(0,errno, "darr_create");
 	free(arr);
 	return NULL;
     }
@@ -121,7 +121,7 @@ darr_insert(darr* arr, double val) {
 	arr->anr = (int)(arr->anr*1.5);
 	double *tmp;
 	if ((tmp = realloc(arr->dlist, arr->anr*sizeof(double))) == NULL) {
-	    perror("darr_insert");
+	    error(0,errno, "darr_insert");
 	    return false;
 	}
 	arr->dlist = tmp;

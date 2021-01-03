@@ -22,6 +22,7 @@
 
 #include "output.h"
 
+/* output one iteration data */
 void
 print_steps(options *opts, size_t memory, pstruct *pstr, int ts) {
 
@@ -30,7 +31,7 @@ print_steps(options *opts, size_t memory, pstruct *pstr, int ts) {
         if (opts->procs) {
                 fprintf(opts->fhandle, "%6d ", pstr->proc_cur->len); 
                 for (int i=0; i < pstr->proc_cur->len; i++) {
-                    fprintf(opts-fhandle, "%4.0f", pstr->proc_cur->dlist[i]);
+                    fprintf(opts->fhandle, "%4.0f", pstr->proc_cur->dlist[i]);
                 }
         }
         fprintf(opts->fhandle, "\n");
@@ -39,6 +40,7 @@ print_steps(options *opts, size_t memory, pstruct *pstr, int ts) {
     fflush(opts->fhandle);
 }
 
+/* print header info */
 void
 print_header(options *opts) {
 
@@ -52,6 +54,7 @@ print_header(options *opts) {
     }
 }
 
+/* print the final summary */
 void
 print_summary(options *opts, size_t memory, pstruct *pstr, int ts) {
    

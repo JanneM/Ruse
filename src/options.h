@@ -23,6 +23,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 #include <error.h>
+#include <errno.h>
 #include <getopt.h>
 #include <libgen.h>
 #include <stdbool.h>

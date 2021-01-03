@@ -24,6 +24,7 @@
 #define ARR_H
 #include <stdbool.h>
 #include <stdlib.h>
+#include <error.h>
 #include <errno.h>
 #include <stdio.h>
 
