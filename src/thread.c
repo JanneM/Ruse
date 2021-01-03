@@ -178,7 +178,6 @@ add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
     resval = *(t_struct **) res;
 
 #ifdef DEBUG
-    printf ("res: %ld \ntval: %ld\n", resval, tval);
     printf("thread res# %d, %ld\n", resval->pid, resval->utime);
 #endif
 
