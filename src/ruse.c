@@ -18,6 +18,10 @@
  * along with Ruse.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* needed for cpu sets */
+#define _GNU_SOURCE
+#include <sched.h>
+
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/types.h>
@@ -36,18 +40,19 @@
 #include "proc.h"
 #include "options.h"
 #include "output.h"
+#include "thread.h"
 
 #define KB 1024
 #define MAX(x,y) ((x) > (y) ? (x): (y))
 #define CLOCKID CLOCK_REALTIME
 #define SIG SIGUSR1
 
-#ifdef DEBUG
+/* measure time difference for debugging */
 double time_diff_micro(struct timespec *toc, struct timespec *tic) {
     return (1e6*(toc->tv_sec-tic->tv_sec)+
 	    (toc->tv_nsec-tic->tv_nsec)/1e3);
 }
-#endif
+
 
 /* Our defined timer */
 timer_t timerid;
@@ -100,7 +105,7 @@ set_signals(int sectime) {
 	sigaction(SIGQUIT, &sa_chld, NULL) == -1 ||
 	sigaction(SIGTERM, &sa_chld, NULL) == -1) {
 
-	perror("set signals: sighandler");
+	error(0,errno, "set signals: sighandler");
 	exit(EXIT_FAILURE);
     }
 
@@ -109,7 +114,7 @@ set_signals(int sectime) {
     sa_time.sa_sigaction = sighandler;
     sigemptyset(&sa_time.sa_mask);
     if (sigaction(SIG, &sa_time, NULL) == -1) {
-	perror("set_signals: timer");
+	error(0,errno, "set_signals: timer");
 	exit(EXIT_FAILURE);
     }
 
@@ -118,7 +123,7 @@ set_signals(int sectime) {
     sev.sigev_signo = SIG;
     sev.sigev_value.sival_ptr = &timerid;
     if (timer_create(CLOCKID, &sev, &timerid) == -1) {
-	perror("set_signals: timer_create");
+	error(0,errno, "set_signals: timer_create");
 	exit(EXIT_FAILURE);
     }
 
@@ -128,7 +133,7 @@ set_signals(int sectime) {
     its.it_interval.tv_sec = its.it_value.tv_sec;
     its.it_interval.tv_nsec = its.it_value.tv_nsec;
     if (timer_settime(timerid, 0, &its, NULL) == -1){
-	perror("set_signals: timer_settime");
+	error(0,errno, "set_signals: timer_settime");
 	exit(EXIT_FAILURE);
     }
 }
@@ -138,13 +143,17 @@ main(int argc, char *argv[])
 {
     
     time_t t1,t2;
-    size_t mem = 0;
+    size_t maxmem = 0;
     size_t rssmem = 0;
     sigset_t mask;
     sigset_t old_mask;
-
-
+    
+    /* process and system information */
+    pstruct *pstr;
     syspagesize = getpagesize()/KB;
+#ifdef DEBUG
+    printf("   page size: %d\n", syspagesize);
+#endif
 
     /* block signals from the timer and the child until we're ready 
      * to receive them
@@ -156,7 +165,7 @@ main(int argc, char *argv[])
 
     options *opts = get_options(&argc, &argv);
 
-    /* Time the process*/
+    /* Time the process */
     time(&t1);
 
     pid_t pid = fork();
@@ -168,35 +177,36 @@ main(int argc, char *argv[])
     {
 	/* We're the child */
 	execvp(argv[0], &argv[0]);
-	perror("execvp() failed");
+	error(0,errno, "execvp() failed");
 	exit(EXIT_FAILURE);
     }
 
     /* We're the parent */
-
-    mem = get_RSS(pid);
+    pstr = create_pstruct();
+    maxmem = get_RSS(pid, pstr);
     print_header(opts);
-    print_steps(opts, mem, 0); 
-
+    print_steps(opts, maxmem, pstr, 0); 
     set_signals(opts->time);
 
     while(1) {
+
 	sigsuspend(&old_mask);
 
 	if (sigtype == SIG) {
 #ifdef DEBUG
 	    clock_gettime(CLOCK_REALTIME, &tic);
 #endif
-	    rssmem = get_RSS(pid);
+	    rssmem = get_RSS(pid, pstr);
 #ifdef DEBUG    
 	    clock_gettime(CLOCK_REALTIME, &toc);
 	    printf("mem: %li %.2fms\n", rssmem, time_diff_micro(&toc, &tic)/1000.0);
 #endif
-	    mem = MAX(mem, rssmem); 
+	    maxmem = MAX(maxmem, rssmem); 
 
 	    if (opts->steps) {
 		time(&t2);
-		print_steps(opts, rssmem, (t2-t1)); 
+		print_steps(opts, rssmem, pstr, (t2-t1));
+
 	    }
 	/* Child disappeared. Finish this. */ 
 	} else if (sigtype == SIGCHLD) {
@@ -215,7 +225,7 @@ main(int argc, char *argv[])
     int status;
     waitpid(pid, &status, 0);
     if (!opts->nosum) {
-	print_summary(opts, mem, runtime);
+	print_summary(opts, maxmem, pstr, runtime);
     }
     if (!opts->nofile) {
 	fclose(opts->fhandle);

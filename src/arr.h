@@ -18,12 +18,21 @@
  * along with Ruse.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef ARR_H
 #define ARR_H
 #include <stdbool.h>
 #include <stdlib.h>
+#include <error.h>
 #include <errno.h>
 #include <stdio.h>
+
+/* hacky implementation; should make it generic but for only two types it's
+ * honestly less error-prone to just have one implementation per type.
+ */
+
+/* integer array */
 
 typedef struct {
     unsigned int anr;   // number of allocated elements
@@ -40,9 +49,40 @@ iarr_create(unsigned int nr);
 bool
 iarr_insert(iarr* arr, int val);
 
+/* reset the element counter */
+bool
+iarr_reset(iarr *arr);
+
 
 /* deallocate the iarr structure */
 void
 iarr_delete(iarr *arr);
+
+
+/* double array */
+typedef struct {
+    unsigned int anr;   // number of allocated elements
+    unsigned int len;	// current number of elements
+    double *dlist;
+} darr;
+
+/* Create a new darr instance. nr is the initial size */
+darr*
+darr_create(unsigned int nr);
+
+
+/* Insert value 'val'. true on success. */
+bool
+darr_insert(darr* arr, double val);
+
+/* reset the element counter */
+bool
+darr_reset(darr *arr);
+
+
+/* deallocate the darr structure */
+void
+darr_delete(darr *arr);
+
 
 #endif

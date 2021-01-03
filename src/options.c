@@ -27,8 +27,9 @@ void
 show_help(const char *progname) {
     printf("Usage: %s [FLAGS] [--help] command [ARG...]\n", progname);
     printf("\
-Measures the time and memory taken for a command process and \n\
-all its subprocesses. \n\
+Measures the time and memory taken for a command and \n\
+all its subprocesses. Also optionally shows how much CPU\n\
+time the processes take. \n\
 \n\
   -l, --label=LABEL      Prefix output with LABEL (default \n\
                          'command')\n\
@@ -36,6 +37,8 @@ all its subprocesses. \n\
       --no-header        Don't print a header line\n\
       --no-summary       Don't print summary info\n\
   -s, --steps            Print each sample step        \n\
+  -p, --procs            Print process information \n\
+      --no-procs         Don't print process information \n\
   -t, --time=SECONDS     Sample every SECONDS (default 30)\n\
 \n\
       --help             Print help\n\
@@ -52,6 +55,7 @@ get_options(int *argc, char **argv[]) {
 
     opts->verbose = false;
     opts->steps   = false;
+    opts->procs   = false;
     opts->time    = 30;
     opts->nohead  = false;
     opts->nofile  = false;
@@ -69,14 +73,16 @@ get_options(int *argc, char **argv[]) {
 	    {"help",    no_argument,       0,  2 },
 	    {"label",   required_argument, 0, 'l'},
 	    {"step",    no_argument,       0, 's'},
+	    {"procs",   no_argument,       0, 'p'},
 	    {"time",    required_argument, 0, 't'},
 	    {"stdout",  no_argument,       0,  3 },
 	    {"no-header",no_argument,      0,  4 },
 	    {"no-summary",no_argument,     0,  5 },
+	    {"no-procs"  ,no_argument,     0,  6 },
 	    {0,         0,                 0,  0 }
 	};
 
-	c = getopt_long(*argc, *argv, "+hl:t:s",
+	c = getopt_long(*argc, *argv, "+hl:t:sp",
 		long_options, &option_index);
 	if (c == -1)
 	    break;
@@ -102,7 +108,7 @@ get_options(int *argc, char **argv[]) {
 	    case 't':
 		opts->time = atoi(optarg);
 		if (opts->time<1) {
-		    fprintf(stderr, "\nError: time must be a positive integer\n\n");
+		    error(0, 0, "time must be a positive integer\n");
 		    show_help((**argv));
 		    exit(EXIT_FAILURE);
 		}
@@ -118,6 +124,12 @@ get_options(int *argc, char **argv[]) {
 	    case 5:
 		opts->nosum = true;
 		break;
+	    case 'p':
+		opts->procs = true;
+		break;
+	    case 6:
+		opts->procs = false;
+		break;
 	    case '?':
     default:
 		show_help((**argv));
@@ -127,7 +139,7 @@ get_options(int *argc, char **argv[]) {
 
     }
     if (optind >= *argc) {
-	fprintf(stderr, "\nError: missing a program to profile\n\n");
+	error(0, 0, "missing a program to profile\n");
 	show_help((**argv));
 	exit(EXIT_FAILURE);
     }
@@ -155,8 +167,7 @@ get_options(int *argc, char **argv[]) {
 	}
 
 	if ((opts->fhandle = fopen(fname, "w"))==NULL) {
-	    perror("failed to open output file.");
-	    exit(EXIT_FAILURE);
+	    error(EXIT_FAILURE, errno, "failed to open output file.");
         }
     }
     return opts;

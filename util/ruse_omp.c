@@ -44,6 +44,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <error.h>
 #include <omp.h>
 
@@ -72,10 +73,11 @@ main(int argc, char*argv[]) {
      * and single-process execution.
      */
 
+    int procs = omp_get_max_threads();
     if (opts->procs >0) {
 	omp_set_num_threads(opts->procs);
+        procs=opts->procs;
     }
-    int procs = omp_get_max_threads();
 
     for (int j=0; j<opts->iter; j++) {
 

@@ -1,4 +1,4 @@
-/* proc.h - helper functions for the /proc filesystem
+/* proc.h - read /proc filesystem info
  *
  * Copyright 2017 Jan Moren
  *
@@ -31,7 +31,7 @@
 #include <dirent.h>
 #include <stdbool.h>
 #include "arr.h"
-
+#include "thread.h"
 
 /* system page size, for calculating the memory use */
 extern int syspagesize;
@@ -39,19 +39,16 @@ extern int syspagesize;
 typedef struct {
     int pid;
     int parent;
-    size_t rss;
 } procdata;
 
 
-/* extract the current RSS (resident set size) and parent process if for
+/* extract the current RSS (resident set size) and parent process for
  * process pid.  If the pid does not exist, return -1
 */
-
 bool
-read_RSS(int pid, size_t *rss, int *parent);
+read_parent(int pid, int *parent);
 
 /* get all process pids on the system */
-
 iarr *
 get_all_pids();
 
@@ -59,8 +56,8 @@ get_all_pids();
 int
 get_all_procs(procdata *procs, iarr *plist);
 
-/* Get total RSS for process tree rooted in pid */
+/* Get total RSS and process usage for process tree rooted in pid */
 size_t
-get_RSS(int pid);
+get_RSS(int pid, pstruct *pstr);
 
 #endif

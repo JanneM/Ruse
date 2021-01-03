@@ -22,32 +22,58 @@
 
 #include "output.h"
 
+/* output one iteration data */
 void
-print_steps(options *opts, size_t memory, int ts) {
+print_steps(options *opts, size_t memory, pstruct *pstr, int ts) {
 
     if (opts->steps) {
-	fprintf(opts->fhandle, "%-9d %.1f\n", ts, ((double)memory)/1024.0);
+	fprintf(opts->fhandle, "%9d %9.1f", ts, ((double)memory)/1024.0);
+        if (opts->procs) {
+                fprintf(opts->fhandle, "%6d ", pstr->proc_cur->len); 
+                for (int i=0; i < pstr->proc_cur->len; i++) {
+                    fprintf(opts->fhandle, "%4.0f", pstr->proc_cur->dlist[i]);
+                }
+        }
+        fprintf(opts->fhandle, "\n");
     }
+
     fflush(opts->fhandle);
 }
 
+/* print header info */
 void
 print_header(options *opts) {
 
     if (!opts->nohead && opts->steps) {
-	fprintf(opts->fhandle, "time(s)   mem(MB)\n");
+	fprintf(opts->fhandle, "  time(s)   mem(MB) ");
+        if (opts->procs) {
+	    fprintf(opts->fhandle, "procs  usage(sorted, %%)");
+        }
+        fprintf(opts->fhandle, "\n");
+        fflush(opts->fhandle);
     }
 }
 
+/* print the final summary */
 void
-print_summary(options *opts, size_t  memory, int ts) {
+print_summary(options *opts, size_t memory, pstruct *pstr, int ts) {
    
     if (!opts->nosum) {
 	if (!opts->nohead && opts->steps) {
 	    fprintf(opts->fhandle, "\n");
 	}
-	fprintf(opts->fhandle, "Time(s):  %d\n", ts);
-	fprintf(opts->fhandle, "Mem(MB):  %.1f\n", ((double)memory)/1024.0);
+	fprintf(opts->fhandle, "Time(s):   %-9d\n", ts);
+	fprintf(opts->fhandle, "Mem(MB):   %-9.1f\n", ((double)memory)/1024.0);
+        if (opts->procs) {
+	    fprintf(opts->fhandle, "Cores:     %-4d\n", pstr->max_cores);
+	    fprintf(opts->fhandle, "Procs:     %-4d\n", pstr->proc_acc->len);
+            fprintf(opts->fhandle, "Proc(%%): ");
+            for (int i=0; i < pstr->proc_acc->len; i++) {
+                fprintf(opts->fhandle, "%6.1f", pstr->proc_acc->dlist[i]/pstr->iter);
+            }
+            fprintf(opts->fhandle, "\n");
+        }
+        fflush(opts->fhandle);
     }
 }
 

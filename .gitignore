@@ -41,3 +41,6 @@ stamp-h1
 
 build/
 
+Build/src/ruse
+Build/util/ruse_multiproc
+Build/util/ruse_omp
