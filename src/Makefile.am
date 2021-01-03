@@ -1,4 +1,4 @@
-AM_CFLAGS = -g -std=gnu99 -Wall -O0
+AM_CFLAGS = -g -std=gnu99 -Wall -O3
 AM_LDFLAGS = -lm -lrt
 
 bin_PROGRAMS = ruse
