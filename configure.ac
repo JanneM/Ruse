@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT(ruse, 1.0.1, jan.moren@oist.jp)
+AC_INIT(ruse, 1.99, jan.moren@oist.jp)
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/proc.h])
 AC_CONFIG_HEADERS([config.h])
@@ -28,6 +28,24 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime getpagesize strerror])
+
+AC_ARG_ENABLE([pss], 
+        AS_HELP_STRING([--enable-pss] [Use PSS rather than RSS for resident memory estimation]),  
+        [case "${enableval}" in
+            yes) pss=true ;;
+            no)  pss=false ;;
+            *) AC_MSG_ERROR([bad value ${enableval} for --enable-pss]) ;;
+        esac],
+        [pss=false])
+
+
+if [test "x$pss" = "xtrue"]
+then
+    AC_DEFINE([ENABLE_PSS], [], ["use PSS for memory estimation"])
+    AC_MSG_NOTICE([using PSS for memory estimation])
+else
+    AC_MSG_NOTICE([using RSS for memory estimation])
+fi
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile

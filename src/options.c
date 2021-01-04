@@ -53,6 +53,12 @@ get_options(int *argc, char **argv[]) {
 
     options *opts = malloc(sizeof(options));
 
+#ifdef ENABLE_PSS
+    opts->pss     = true;
+#else
+    opts->pss     = false;
+#endif
+    
     opts->verbose = false;
     opts->steps   = false;
     opts->procs   = false;

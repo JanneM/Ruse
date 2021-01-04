@@ -43,6 +43,7 @@ typedef struct {
     bool nofile;
     bool nohead;
     bool nosum;
+    bool pss;
     FILE *fhandle;
 } options;
 
