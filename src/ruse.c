@@ -183,7 +183,7 @@ main(int argc, char *argv[])
 
     /* We're the parent */
     pstr = create_pstruct();
-    maxmem = get_RSS(pid, pstr);
+    maxmem = get_process_data(pid, pstr);
     print_header(opts);
     print_steps(opts, maxmem, pstr, 0); 
     set_signals(opts->time);
@@ -196,7 +196,7 @@ main(int argc, char *argv[])
 #ifdef DEBUG
 	    clock_gettime(CLOCK_REALTIME, &tic);
 #endif
-	    rssmem = get_RSS(pid, pstr);
+	    rssmem = get_process_data(pid, pstr);
 #ifdef DEBUG    
 	    clock_gettime(CLOCK_REALTIME, &toc);
 	    printf("mem: %li %.2fms\n", rssmem, time_diff_micro(&toc, &tic)/1000.0);

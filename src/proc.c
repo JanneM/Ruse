@@ -281,7 +281,7 @@ get_all_procs(procdata *procs, iarr *plist) {
 
 /* Get total RSS and process usage for process tree rooted in pid */
 size_t
-get_RSS_r(int pid, procdata *p, int l, pstruct *pstr) {
+get_process_data_r(int pid, procdata *p, int l, pstruct *pstr) {
     
     size_t rss=0;
     size_t get_rss;
@@ -293,7 +293,7 @@ get_RSS_r(int pid, procdata *p, int l, pstruct *pstr) {
 #endif
 	    read_mem(p[i].pid, &get_rss);
             read_threads(p[i].pid, pstr);
-	    rss += get_rss + get_RSS_r(p[i].pid, p, l, pstr);
+	    rss += get_rss + get_process_data_r(p[i].pid, p, l, pstr);
 	}
     }
     return rss;
@@ -302,7 +302,7 @@ get_RSS_r(int pid, procdata *p, int l, pstruct *pstr) {
 
 /* Get total RSS and process usage for process tree rooted in pid */
 size_t
-get_RSS(int pid, pstruct *pstr) {
+get_process_data(int pid, pstruct *pstr) {
 
     int elems;
     iarr *plist;
@@ -338,7 +338,7 @@ get_RSS(int pid, pstruct *pstr) {
 	    read_mem(pid, &get_rss);
 
             read_threads(pid, pstr);
-	    rss = get_rss + get_RSS_r(pid, procs, elems, pstr);
+	    rss = get_rss + get_process_data_r(pid, procs, elems, pstr);
 	    break;
 	}
     }

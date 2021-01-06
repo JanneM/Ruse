@@ -58,6 +58,6 @@ get_all_procs(procdata *procs, iarr *plist);
 
 /* Get total RSS and process usage for process tree rooted in pid */
 size_t
-get_RSS(int pid, pstruct *pstr);
+get_process_data(int pid, pstruct *pstr);
 
 #endif
