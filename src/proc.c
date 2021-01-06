@@ -110,6 +110,7 @@ read_pss_mem(int pid, size_t *mem) {
             break;
         }
     }
+    fclose(f);
     return true;
 }
 
