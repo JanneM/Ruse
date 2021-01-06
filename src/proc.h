@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include "arr.h"
 #include "thread.h"
 

@@ -42,7 +42,6 @@ read_parent(int pid, int *parent) {
     }
     
     f = fopen(fname, "r");
-    
     // pids may disappear. This is not an error
     if (!f) {
 	return false;
@@ -74,7 +73,47 @@ read_parent(int pid, int *parent) {
     return true;
 }
 
-/* read current actually used memory */
+/* read current used memory as PSS */
+bool
+read_pss_mem(int pid, size_t *mem) {
+
+    int i;
+    int res;
+    char line[128];
+    char *fname;
+    FILE *f;
+
+    if ((res = asprintf(&fname, "/proc/%i/smaps_rollup", pid)) == -1) {
+	error(0,0, "Failed to convert smaps_rollup path\n");
+	return false;
+    }
+    
+    f = fopen(fname, "r");
+    free(fname); 
+    // pids may disappear. This is not an error
+    if (!f) {
+	return false;
+    }
+    while (fgets(line, sizeof(line), f)) {
+        if (strncmp(line, "Pss:", 4) != 0) {
+            continue;
+        }
+
+        for (i = 4; i < sizeof(line); i++) {
+
+            if (!isdigit(line[i])) {
+                continue;
+            }
+            if (sscanf(&line[i],"%lu", mem) != 1) {
+                error(0, 0, "failed to read PSS field.");
+            }
+            break;
+        }
+    }
+    return true;
+}
+
+/* read current used memory as RSS */
 bool
 read_rss_mem(int pid, size_t *mem) {
 
@@ -125,8 +164,7 @@ inline bool
 read_mem(int pid, size_t *mem, bool use_pss) {
 
     if (use_pss) {
-
-        return read_rss_mem(pid, mem);
+        return read_pss_mem(pid, mem);
     } else {
         return read_rss_mem(pid, mem);
     }
