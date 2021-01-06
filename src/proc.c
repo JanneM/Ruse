@@ -73,10 +73,57 @@ read_parent(int pid, int *parent) {
     return true;
 }
 
+/* code (adapted from Slurm) to get PSS directly, but slowly.
+ * currently only for comparison; may be useful in the future.*/
+bool
+read_pss_mem_slow(int pid, size_t *mem)
+{
+    int i;
+    int res;
+    size_t pss;
+    char line[128];
+    char *fname;
+    FILE *f;
+
+    if ((res = asprintf(&fname, "/proc/%i/smaps", pid)) == -1) {
+	error(0,0, "Failed to convert smaps path\n");
+	return false;
+    }
+
+    f = fopen(fname, "r");
+    free(fname); 
+    // pids may disappear. This is not an error
+    if (!f) {
+	return false;
+    }
+
+    pss = 0;
+
+    while (fgets(line,sizeof(line),f)) {
+
+        if (strncmp(line, "Pss:", 4) != 0) {
+            continue;
+        }
+
+        for (i = 4; i < sizeof(line); i++) {
+
+            if (!isdigit(line[i])) {
+                continue;
+            }
+            pss += atol(&line[i]);
+            break;
+        }
+    }
+    fclose(f);
+    *mem = pss;
+    return true;
+}
+
 /* read current used memory as PSS */
 bool
 read_pss_mem(int pid, size_t *mem) {
 
+    
     int i;
     int res;
     char line[128];
@@ -87,7 +134,7 @@ read_pss_mem(int pid, size_t *mem) {
 	error(0,0, "Failed to convert smaps_rollup path\n");
 	return false;
     }
-    
+
     f = fopen(fname, "r");
     free(fname); 
     // pids may disappear. This is not an error
@@ -101,18 +148,18 @@ read_pss_mem(int pid, size_t *mem) {
 
         for (i = 4; i < sizeof(line); i++) {
 
+            /* faster than letting atol() strip whitespace for us */
             if (!isdigit(line[i])) {
                 continue;
             }
-            if (sscanf(&line[i],"%lu", mem) != 1) {
-                error(0, 0, "failed to read PSS field.");
-            }
+            *mem = atol(&line[i]);
             break;
         }
     }
     fclose(f);
     return true;
 }
+
 
 /* read current used memory as RSS */
 bool
@@ -126,8 +173,7 @@ read_rss_mem(int pid, size_t *mem) {
     char *fname;
     FILE *f;
 
-    res = asprintf(&fname, "/proc/%i/stat", pid);
-    if (res == -1) {
+    if((res = asprintf(&fname, "/proc/%i/stat", pid)) == -1) {
 	error(0,0, "Failed to convert proc file name\n");
 	return false;
     }
@@ -190,8 +236,7 @@ read_threads(int pid, pstruct *pstr) {
     int core = -1;
     unsigned long utime = 0;
 
-    res = asprintf(&dname, "/proc/%i/task", pid);
-    if (res == -1) {
+    if((res = asprintf(&dname, "/proc/%i/task", pid)) == -1) {
 	error(0,0, "Failed to create task dir name\n");
 	return false;
     }
@@ -216,8 +261,7 @@ read_threads(int pid, pstruct *pstr) {
             continue;
         }
 
-        res = asprintf(&fname, "/proc/%i/task/%li/stat", pid, tnum);
-        if (res == -1) {
+        if((res = asprintf(&fname, "/proc/%i/task/%li/stat", pid, tnum)) == -1) {
 	    error(0,0, "Failed to convert proc file name\n");
 	    return false;
         }
