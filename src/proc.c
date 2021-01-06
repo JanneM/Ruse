@@ -22,7 +22,7 @@
 #include <errno.h>
 int syspagesize=0;
 
-/* extract the current RSS (resident set size) and parent process for
+/* extract the parent process for
  * process pid.  If the pid does not exist, return -1
 */
 bool
@@ -76,7 +76,7 @@ read_parent(int pid, int *parent) {
 
 /* read current actually used memory */
 bool
-read_mem(int pid, size_t *rss) {
+read_rss_mem(int pid, size_t *mem) {
 
     int i;
     int res;
@@ -110,15 +110,28 @@ read_mem(int pid, size_t *rss) {
     for(i=0; i<24; i++) {
 	field = strsep(&line_tmp, " ");
     }
-    *rss = atol(field);
+    *mem = atol(field);
 
     if(line)
 	free(line);
 
     fclose(f);    
-    *rss  *= syspagesize;
+    *mem  *= syspagesize;
     return true;
 }
+
+/* read current actually used memory */
+inline bool
+read_mem(int pid, size_t *mem, bool use_pss) {
+
+    if (use_pss) {
+
+        return read_rss_mem(pid, mem);
+    } else {
+        return read_rss_mem(pid, mem);
+    }
+}
+
 
 /* read thread/process usage */
 bool
@@ -281,34 +294,34 @@ get_all_procs(procdata *procs, iarr *plist) {
 
 /* Get total RSS and process usage for process tree rooted in pid */
 size_t
-get_process_data_r(int pid, procdata *p, int l, pstruct *pstr) {
+get_process_data_r(int pid, procdata *p, int l, pstruct *pstr, bool use_pss) {
     
-    size_t rss=0;
-    size_t get_rss;
+    size_t mem=0;
+    size_t proc_mem;
 
     for (int i=0; i<l; i++) {
 	if (p[i].parent == pid) {
 #ifdef DEBUG
     printf("%d ", p[i].pid);
 #endif
-	    read_mem(p[i].pid, &get_rss);
+	    read_mem(p[i].pid, &proc_mem, use_pss);
             read_threads(p[i].pid, pstr);
-	    rss += get_rss + get_process_data_r(p[i].pid, p, l, pstr);
+	    mem += proc_mem + get_process_data_r(p[i].pid, p, l, pstr, use_pss);
 	}
     }
-    return rss;
+    return mem;
 }
 
 
 /* Get total RSS and process usage for process tree rooted in pid */
 size_t
-get_process_data(int pid, pstruct *pstr) {
+get_process_data(int pid, pstruct *pstr, bool use_pss) {
 
     int elems;
     iarr *plist;
     procdata *procs;
-    size_t rss = 0;
-    size_t get_rss;
+    size_t mem = 0;
+    size_t proc_mem;
 
 
     if ((plist = get_all_pids()) == NULL) {
@@ -335,10 +348,10 @@ get_process_data(int pid, pstruct *pstr) {
 #ifdef DEBUG
     printf("procs: %d ", pid); fflush(stdout);
 #endif
-	    read_mem(pid, &get_rss);
+	    read_mem(pid, &proc_mem, use_pss);
 
             read_threads(pid, pstr);
-	    rss = get_rss + get_process_data_r(pid, procs, elems, pstr);
+	    mem = proc_mem + get_process_data_r(pid, procs, elems, pstr, use_pss);
 	    break;
 	}
     }
@@ -346,5 +359,5 @@ get_process_data(int pid, pstruct *pstr) {
     printf("\n");
 #endif
     thread_summarize(pstr);
-    return rss;
+    return mem;
 }
