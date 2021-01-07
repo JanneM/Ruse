@@ -27,20 +27,32 @@ void
 show_help(const char *progname) {
     printf("Usage: %s [FLAGS] [--help] command [ARG...]\n", progname);
     printf("\
-Measures the time and memory taken for a command and \n\
-all its subprocesses. Also optionally shows how much CPU\n\
-time the processes take. \n\
+Measures the time and memory taken for a command and all its subprocesses.\n\
+Also shows how much CPU time the processes take. \n\
 \n\
-  -l, --label=LABEL      Prefix output with LABEL (default \n\
-                         'command')\n\
+To measure a command 'command', put 'ruse' in front\n\
+\n\
+  ruse command ....\n\
+\n\
+  -l, --label=LABEL      Prefix output with LABEL (default 'command')\n\
       --stdout           Don't save to a file, but to stdout\n\
       --no-header        Don't print a header line\n\
       --no-summary       Don't print summary info\n\
-  -s, --steps            Print each sample step        \n\
-  -p, --procs            Print process information \n\
-      --no-procs         Don't print process information \n\
+  -s, --steps            Print each sample step\n\
+  -p, --procs            Print process information (default)\n\
+      --no-procs         Don't print process information\n\
   -t, --time=SECONDS     Sample every SECONDS (default 30)\n\
-\n\
+\n");
+#ifdef ENABLE_PSS
+    printf("\
+      --rss              use RSS for memory estimation\n\
+      --pss              use PSS for memory estimation (default)\n");
+#else
+    printf("\
+      --rss              use RSS for memory estimation (default)\n\
+      --pss              use PSS for memory estimation\n");
+#endif
+    printf("\n\
       --help             Print help\n\
       --version          Display version\n\
 \n");
@@ -56,22 +68,6 @@ get_options(int *argc, char **argv[]) {
 #ifdef ENABLE_PSS
     opts->pss     = true;
     
-    /* do we support rapid PSS information (kernel 4.18+) */
-    char *fname;
-    int res;
-    FILE *f;
-    pid_t pid = getpid();
-    if ((res = asprintf(&fname, "/proc/%ld/smaps_rollup", (long)pid)) == -1) {
-        error(EXIT_FAILURE, 0, "failed to create file name string.\n");
-    }
-
-    if ((f = fopen(fname, "r"))==NULL) {
-        error(0, 0, "\n** Warning **\n\
-/proc/*/smaps_rollup not supported on this system.\n\
-Rapid PSS estimation not possible. Falling back on RSS.\n\
-To remove this message, rebuild without PSS.\n\n");
-        opts->pss = false;
-    }
 
 
 #else
@@ -80,7 +76,7 @@ To remove this message, rebuild without PSS.\n\n");
 
     opts->verbose = false;
     opts->steps   = false;
-    opts->procs   = false;
+    opts->procs   = true;
     opts->time    = 30;
     opts->nohead  = false;
     opts->nofile  = false;
@@ -93,18 +89,20 @@ To remove this message, rebuild without PSS.\n\n");
     while (1) {
 	int option_index = 0;
 	static struct option long_options[] = {
-//	    {"verbose", no_argument,       0, 'v'},
-	    {"version", no_argument,       0,  1 },
-	    {"help",    no_argument,       0,  2 },
-	    {"label",   required_argument, 0, 'l'},
-	    {"step",    no_argument,       0, 's'},
-	    {"procs",   no_argument,       0, 'p'},
-	    {"time",    required_argument, 0, 't'},
-	    {"stdout",  no_argument,       0,  3 },
-	    {"no-header",no_argument,      0,  4 },
-	    {"no-summary",no_argument,     0,  5 },
-	    {"no-procs"  ,no_argument,     0,  6 },
-	    {0,         0,                 0,  0 }
+//	    {"verbose",     no_argument,       0, 'v'},
+	    {"version",     no_argument,       0,  1 },
+	    {"help",        no_argument,       0,  2 },
+	    {"label",       required_argument, 0, 'l'},
+	    {"step",        no_argument,       0, 's'},
+	    {"procs",       no_argument,       0, 'p'},
+	    {"time",        required_argument, 0, 't'},
+	    {"stdout",      no_argument,       0,  3 },
+	    {"no-header",   no_argument,       0,  4 },
+	    {"no-summary",  no_argument,       0,  5 },
+	    {"no-procs",    no_argument,       0,  6 },
+	    {"rss",         no_argument,       0,  7 },
+	    {"pss",         no_argument,       0,  8 },
+	    {0,             0,                 0,  0 }
 	};
 
 	c = getopt_long(*argc, *argv, "+hl:t:sp",
@@ -155,6 +153,12 @@ To remove this message, rebuild without PSS.\n\n");
 	    case 6:
 		opts->procs = false;
 		break;
+	    case 7:
+		opts->pss = false;
+		break;
+	    case 8:
+		opts->pss = true;
+		break;
 	    case '?':
     default:
 		show_help((**argv));
@@ -167,6 +171,23 @@ To remove this message, rebuild without PSS.\n\n");
 	error(0, 0, "missing a program to profile\n");
 	show_help((**argv));
 	exit(EXIT_FAILURE);
+    }
+
+    /* do we support rapid PSS information (kernel 4.18+) */
+    char *fname;
+    int res;
+    FILE *f;
+    pid_t pid = getpid();
+    if ((res = asprintf(&fname, "/proc/%ld/smaps_rollup", (long)pid)) == -1) {
+        error(EXIT_FAILURE, 0, "failed to create file name string.\n");
+    }
+
+    if ((f = fopen(fname, "r"))==NULL) {
+        error(0, 0, "\n** Warning **\n\
+/proc/*/smaps_rollup not supported on this system.\n\
+Rapid PSS estimation not possible. Falling back on RSS.\n\
+To remove this message, use \"--rss\" or rebuild without PSS.\n\n");
+        opts->pss = false;
     }
 
     // point argv and argc to profiled program forwards
