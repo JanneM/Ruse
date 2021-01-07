@@ -22,6 +22,36 @@
 
 #include "output.h"
 
+void
+print_time(FILE *f, int ts) {
+    int d, h, m, s;
+    d = ts/(24*60*60);
+    ts %= (24*60*60);
+    h = ts/(60*60);
+    ts %= (60*60);
+    m = ts/60;
+    s = ts % 60;
+    fprintf(f, "Time:   ");
+    if (d>0) {
+        fprintf(f, "%d-", d);
+    }
+    fprintf(f, "%02d:%02d:%02d\n", h, m, s);
+}
+void
+print_mem(FILE *f, size_t mem) {
+    
+    int d = 1024;
+    mem=mem*5*d*d;
+    if (mem>(d*d*d)) {
+        fprintf(f, "Mem:   %6.1f TB\n", (double)mem/(d*d*d));
+    } else 
+    if (mem>(d*d)) {
+        fprintf(f, "Mem:   %6.1f GB\n", (double)mem/(d*d));
+    } else { 
+        fprintf(f, "Mem:   %6.1f MB\n", (double)mem/(d));
+    }
+}
+
 /* output one iteration data */
 void
 print_steps(options *opts, size_t memory, pstruct *pstr, int ts) {
@@ -62,8 +92,9 @@ print_summary(options *opts, size_t memory, pstruct *pstr, int ts) {
 	if (!opts->nohead && opts->steps) {
 	    fprintf(opts->fhandle, "\n");
 	}
-	fprintf(opts->fhandle, "Time(s):   %-9d\n", ts);
-	fprintf(opts->fhandle, "Mem(MB):   %-9.1f\n", ((double)memory)/1024.0);
+        print_time(opts->fhandle, ts);
+        print_mem(opts->fhandle, memory); 
+//	fprintf(opts->fhandle, "Mem:   %-9.1f\n", ((double)memory)/1024.0);
         if (opts->procs) {
 	    fprintf(opts->fhandle, "Cores:     %-4d\n", pstr->max_cores);
 	    fprintf(opts->fhandle, "Procs:     %-4d\n", pstr->proc_acc->len);

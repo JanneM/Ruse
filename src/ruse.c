@@ -147,7 +147,10 @@ main(int argc, char *argv[])
     size_t rssmem = 0;
     sigset_t mask;
     sigset_t old_mask;
-    
+#ifdef TIMING
+    double timing1;
+#endif
+
     /* process and system information */
     pstruct *pstr;
     syspagesize = getpagesize()/KB;
@@ -193,13 +196,13 @@ main(int argc, char *argv[])
 	sigsuspend(&old_mask);
 
 	if (sigtype == SIG) {
-#ifdef DEBUG
+#ifdef TIMING
 	    clock_gettime(CLOCK_REALTIME, &tic);
 #endif
 	    rssmem = get_process_data(pid, pstr, opts->pss);
-#ifdef DEBUG    
+#ifdef TIMING   
 	    clock_gettime(CLOCK_REALTIME, &toc);
-	    printf("mem: %li %.2fms\n", rssmem, time_diff_micro(&toc, &tic)/1000.0);
+	    timing1 = time_diff_micro(&toc, &tic)/1000.0;
 #endif
 	    maxmem = MAX(maxmem, rssmem); 
 
@@ -208,6 +211,10 @@ main(int argc, char *argv[])
 		print_steps(opts, rssmem, pstr, (t2-t1));
 
 	    }
+#ifdef TIMING   
+	    clock_gettime(CLOCK_REALTIME, &toc);
+	    printf("TIME: get data: %.2fms \ttotal: %.2fms\n", timing1, time_diff_micro(&toc, &tic)/1000.0);
+#endif
 	/* Child disappeared. Finish this. */ 
 	} else if (sigtype == SIGCHLD) {
 	    break;	
