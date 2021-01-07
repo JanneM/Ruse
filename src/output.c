@@ -41,7 +41,6 @@ void
 print_mem(FILE *f, size_t mem) {
     
     int d = 1024;
-    mem=mem*5*d*d;
     if (mem>(d*d*d)) {
         fprintf(f, "Mem:   %6.1f TB\n", (double)mem/(d*d*d));
     } else 
