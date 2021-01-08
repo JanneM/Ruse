@@ -31,7 +31,7 @@ print_time(FILE *f, int ts) {
     ts %= (60*60);
     m = ts/60;
     s = ts % 60;
-    fprintf(f, "Time:    ");
+    fprintf(f, "Time:          ");
     if (d>0) {
         fprintf(f, "%d-", d);
     }
@@ -42,12 +42,12 @@ print_mem(FILE *f, size_t mem) {
     
     int d = 1024;
     if (mem>(d*d*d)) {
-        fprintf(f, "Mem:     %.1f TB\n", (double)mem/(d*d*d));
+        fprintf(f, "Memory:        %.1f TB\n", (double)mem/(d*d*d));
     } else 
     if (mem>(d*d)) {
-        fprintf(f, "Mem:     %.1f GB\n", (double)mem/(d*d));
+        fprintf(f, "Memory:        %.1f GB\n", (double)mem/(d*d));
     } else { 
-        fprintf(f, "Mem:     %.1f MB\n", (double)mem/(d));
+        fprintf(f, "Memory:        %.1f MB\n", (double)mem/(d));
     }
 }
 
@@ -56,9 +56,9 @@ void
 print_steps(options *opts, size_t memory, pstruct *pstr, int ts) {
 
     if (opts->steps) {
-	fprintf(opts->fhandle, "%9d %9.1f", ts, ((double)memory)/1024.0);
+	fprintf(opts->fhandle, "%7d %11.1f", ts, ((double)memory)/1024.0);
         if (opts->procs) {
-                fprintf(opts->fhandle, "%6d ", pstr->proc_cur->len); 
+                fprintf(opts->fhandle, "%6d %5d ", pstr->nproc, pstr->proc_cur->len); 
                 for (int i=0; i < pstr->proc_cur->len; i++) {
                     fprintf(opts->fhandle, "%4.0f", pstr->proc_cur->dlist[i]);
                 }
@@ -74,11 +74,16 @@ void
 print_header(options *opts) 
 {
 
-    if (!opts->nohead && opts->steps) {
-	fprintf(opts->fhandle, "  time(s)   mem(MB) ");
+    if (!opts->nohead && opts->steps) { 
+	fprintf(opts->fhandle, "   time         mem   ");
         if (opts->procs) {
-	    fprintf(opts->fhandle, "procs  usage(sorted, %%)");
+	    fprintf(opts->fhandle, "processes  process usage");
         }
+        fprintf(opts->fhandle, "\n");
+	fprintf(opts->fhandle, "  (secs)        (MB)  ");
+	if (opts->procs) {
+	    fprintf(opts->fhandle, "tot  used  (sorted, %%CPU)");
+	}
         fprintf(opts->fhandle, "\n");
         fflush(opts->fhandle);
     }
@@ -108,8 +113,9 @@ print_summary(options *opts, size_t memory, pstruct *pstr, int ts) {
                 strncpy(pad, "   ", 4);
             }
 
-	    fprintf(opts->fhandle, "Cores:%s%4d\n", pad, pstr->max_cores);
-	    fprintf(opts->fhandle, "Procs:%s%4d\n", pad, pstr->proc_acc->len);
+	    fprintf(opts->fhandle, "Cores:      %s%4d\n", pad, pstr->max_cores);
+	    fprintf(opts->fhandle, "Total_procs:%s%4d\n", pad, pstr->max_proc);
+	    fprintf(opts->fhandle, "Used_procs: %s%4d\n", pad, pstr->proc_acc->len);
             fprintf(opts->fhandle, "Proc(%%): ");
             for (int i=0; i < pstr->proc_acc->len; i++) {
                 fprintf(opts->fhandle, "%-6.1f", pstr->proc_acc->dlist[i]/pstr->iter);

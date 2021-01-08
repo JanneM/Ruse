@@ -118,7 +118,8 @@ create_pstruct() {
     pstr->proc_acc = darr_create(4);
 
     pstr->iter = 0;
-
+    pstr->nproc = 0;
+    pstr->max_proc = 0;
     return pstr;
 }
 
@@ -148,7 +149,7 @@ do_thread_iter(pstruct *pstr) {
     uptime = atof(line);
     pstr->dtime = uptime - pstr->ptime;
     pstr->ptime = uptime;
-
+    pstr->nproc = 0;
     return true;
 }
 
@@ -159,6 +160,7 @@ add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
     void *res;
     t_struct *tval;
     t_struct *resval;
+
     unsigned long udiff;
 
     if ((tval = calloc(sizeof(t_struct),1))==NULL) {
@@ -192,9 +194,11 @@ add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
     /* if we haven't just started, fill a list of time spent running 
      * since last iteration */
     if (pstr->dtime>0.0) {
-        darr_insert(pstr->proc_cur, udiff/pstr->dtime);
+	if (udiff >0) {
+	    darr_insert(pstr->proc_cur, udiff/pstr->dtime);
+	}
     }
-    
+    pstr->nproc++;
     return true;
 }
 
@@ -220,6 +224,9 @@ thread_summarize(pstruct *pstr) {
 
     for (int i=0; i<pstr->proc_cur->len; i++) {
         pstr->proc_acc->dlist[i] += pstr->proc_cur->dlist[i];
+    }
+    if (pstr->max_proc < pstr->nproc) {
+	pstr->max_proc = pstr->nproc;
     }
 
     return true;

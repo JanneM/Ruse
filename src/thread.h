@@ -48,6 +48,8 @@ typedef struct {
 
     darr *proc_cur;                 // current process use
     darr *proc_acc;                 // accumulated process use     
+    unsigned int nproc;		    // current total processes
+    unsigned int max_proc;	    // max total processes
     unsigned int iter;		    // iterations
    
     int jiffy;                      // jiffies. Not currently used
