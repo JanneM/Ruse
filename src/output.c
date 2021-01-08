@@ -31,7 +31,7 @@ print_time(FILE *f, int ts) {
     ts %= (60*60);
     m = ts/60;
     s = ts % 60;
-    fprintf(f, "Time:   ");
+    fprintf(f, "Time:    ");
     if (d>0) {
         fprintf(f, "%d-", d);
     }
@@ -42,12 +42,12 @@ print_mem(FILE *f, size_t mem) {
     
     int d = 1024;
     if (mem>(d*d*d)) {
-        fprintf(f, "Mem:   %6.1f TB\n", (double)mem/(d*d*d));
+        fprintf(f, "Mem:     %.1f TB\n", (double)mem/(d*d*d));
     } else 
     if (mem>(d*d)) {
-        fprintf(f, "Mem:   %6.1f GB\n", (double)mem/(d*d));
+        fprintf(f, "Mem:     %.1f GB\n", (double)mem/(d*d));
     } else { 
-        fprintf(f, "Mem:   %6.1f MB\n", (double)mem/(d));
+        fprintf(f, "Mem:     %.1f MB\n", (double)mem/(d));
     }
 }
 
@@ -71,7 +71,8 @@ print_steps(options *opts, size_t memory, pstruct *pstr, int ts) {
 
 /* print header info */
 void
-print_header(options *opts) {
+print_header(options *opts) 
+{
 
     if (!opts->nohead && opts->steps) {
 	fprintf(opts->fhandle, "  time(s)   mem(MB) ");
@@ -95,11 +96,23 @@ print_summary(options *opts, size_t memory, pstruct *pstr, int ts) {
         print_mem(opts->fhandle, memory); 
 //	fprintf(opts->fhandle, "Mem:   %-9.1f\n", ((double)memory)/1024.0);
         if (opts->procs) {
-	    fprintf(opts->fhandle, "Cores:     %-4d\n", pstr->max_cores);
-	    fprintf(opts->fhandle, "Procs:     %-4d\n", pstr->proc_acc->len);
+
+            char pad[5] = "";
+            if (pstr->max_cores>9) {
+                strncpy(pad, " ", 2);
+            }
+            if (pstr->max_cores>99) {
+                strncpy(pad, "  ", 3);
+            } 
+            if (pstr->max_cores>999) {
+                strncpy(pad, "   ", 4);
+            }
+
+	    fprintf(opts->fhandle, "Cores:%s%4d\n", pad, pstr->max_cores);
+	    fprintf(opts->fhandle, "Procs:%s%4d\n", pad, pstr->proc_acc->len);
             fprintf(opts->fhandle, "Proc(%%): ");
             for (int i=0; i < pstr->proc_acc->len; i++) {
-                fprintf(opts->fhandle, "%6.1f", pstr->proc_acc->dlist[i]/pstr->iter);
+                fprintf(opts->fhandle, "%-6.1f", pstr->proc_acc->dlist[i]/pstr->iter);
             }
             fprintf(opts->fhandle, "\n");
         }

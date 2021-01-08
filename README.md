@@ -1,11 +1,11 @@
 # Ruse
 
 
-A command-line utility to periodically measure the resource use of a process and its subprocesses, in the same way as the [Slurm] job scheduler. Currently it measures only execution time and memory use by total RSS. 
+A command-line utility to periodically measure the resource use of a process and its subprocesses, in the same way as the [Slurm] job scheduler. It measures the memory used as RSS or PSS and the CPU usage par process and thread. 
 
-You can find the actual memory and execution time you need for individual programs or MPI processes, presented in a way that is straightforward to understand and apply to your [Slurm] job submissions.
+You can find the actual memory, execution time and cores that you need for individual programs or MPI processes, presented in a way that is straightforward to understand and apply to your [Slurm] job submissions.
 
-Ruse periodically samples the process and its subprocesses and keeps track of the time and maximum RSS use. It also optionally records the momentary time and memory use. The purpose is not to examine short processes in detail, but to follow jobs that run for many minutes, hours or days. 
+Ruse periodically samples the process and its subprocesses and keeps track of the CPU, time and maximum memory use. It also optionally records the sampled values over time. The purpose or Ruse is not to profile short processes in detail, but to follow jobs that run for many minutes, hours or days. 
 
 ## Usage
 
@@ -18,13 +18,17 @@ ruse [FLAGS] command [ARG...]
 Options include:
 
 ```
-  -l, --label=LABEL      Prefix output with LABEL (default 
-                         'command')
+  -l, --label=LABEL      Prefix output with LABEL (default 'command')
       --stdout           Don't save to a file, but to stdout
       --no-header        Don't print a header line
       --no-summary       Don't print summary info
-  -s, --steps            Print each sample step        
+  -s, --steps            Print each sample step
+  -p, --procs            Print process information (default)
+      --no-procs         Don't print process information
   -t, --time=SECONDS     Sample every SECONDS (default 30)
+
+      --rss              use RSS for memory estimation
+      --pss              use PSS for memory estimation (default)
 
       --help             Print help
       --version          Display version
@@ -33,15 +37,21 @@ Options include:
 For example:
 
 ```
-ruse sleep 600
+ruse sleep 150
 ```
 
-Ruse samples the memory use every 30 seconds, beginning at 0, and Writes a file `sleep-<pid>.ruse` with the contents:
+Ruse samples the CPU and memory use every 30 seconds, beginning at 0, and writes a file `sleep-<pid>.ruse` with the contents:
 
 ```
-Time(s):  600
-Mem(MB):  0.7
+Time:    00:02:30
+Mem:     0.6 MB
+Cores:   4
+Procs:   1
+Proc(%): 0.0
 ```
+
+We see that "sleep" ran for 2:30; it used about 0.6 MB memory; it had 4 cores available, but at most used 1; and that process used 0.0% of CPU. Not surprising, as "sleep" basically does nothing at all.
+
 
 Run ruse on make (making OpenCV), with a sampling frequency of 1 second, and logging all data:
 
