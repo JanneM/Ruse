@@ -42,7 +42,7 @@ Let's begin with a couple of toy examples.
 ruse sleep 150
 ```
 
-Ruse samples the CPU and memory use every 30 seconds, beginning at 0, and writes a file `sleep-<pid>.ruse` with the contents:
+Ruse samples the CPU and memory use every 30 seconds and writes a file `sleep-<pid>.ruse` with the contents:
 
 ```
 Time:	       00:02:30
@@ -56,6 +56,81 @@ Proc(%):
 
 We see that "sleep" ran for 2 minutes and 30 seconds; it used about 0.6 MB memory; it had 4 cores available, but spawned only 1, and didn't actually use it. Not surprising, as "sleep" does nothing at all very efficiently.
 
+**Matrix multiplication**
+
+Here a small test program that does a matrix multiplication using OpenBLAS:
+
+```python3
+#!/usr/bin/env python3
+import numpy as np
+
+s = 4000
+a = np.array(np.random.random_sample((s, s)))
+b = np.array(np.random.random_sample((s, s )))
+
+c=np.matmul(a,b)
+```
+
+We run this with Ruse:
+
+```
+$ ruse --stdout -st1 ./mat.py
+   time         mem   processes  process usage
+  (secs)        (MB)  tot  used  (sorted, %CPU)
+      0         2.9     1     0 
+      1       181.8     1     1   82
+      2       397.3     6     6   78  60  57  57  56  52
+      3       397.3     6     6  100 100  99  99  99  92
+      4       397.3     6     6   99  99  99  95  93  92
+      5       397.3     6     6   98  97  96  83  78  63
+      6       397.3     6     6  100 100 100 100  96  91
+      7       397.3     6     6  100  99  99  99  97  90
+      8       397.3     6     6  100  99  99  99  96  91
+      9       397.3     6     6  100 100  99  99  98  95
+     10       397.3     6     6   99  99  97  86  72  65
+     11       397.3     6     6   99  99  99  98  97  97
+     12       397.3     6     6  100  99  99  99  99  97
+
+Time:          00:00:13
+Memory:        397.3 MB
+Cores:         6
+Total_procs:   6
+Used_procs:    6
+Proc(%): 88.9  80.8  80.2  78.0  75.4  71.2  
+```
+
+We use "--stdout" to print the result on screen instead of into a file. "-s" displays each sample step, and "-t 1" sets the sample step time to 1 second. 
+
+The running display shows us the number of seconds since start; the current used memory; total allocated processes; the number of processes that actually did something the past time step; and the percentage of CPU use for all used processes, sorted by activity.
+
+At the end we get a summary with the total time; maximum used memory; available cores; peak total, then peak used processes; and the average CPU use, again sorted by amount of activity.
+
+**Measure a computational chemistry calculation**
+
+Here we'll run an example calculation on a molecule using a computational chemistry package. We run the command as:
+
+```
+$ ruse -st1 g09<Azurgrgrg.inp >azo.out
+```
+
+This tells Ruse to record each time step with the "-s" option, and to use a one-second time step with "-t1". Our result file looks like this (a bit abbreviated):
+
+```
+ddffsdf
+```
+
+We have 8 available cores; 9 processes in total; and at most 8 processes are actually used at any one time. This is a common pattern: The parent process reads input files and sets everything up; then a set of worker threads do the actual calculations while the parent process is idle.
+
+This application runs caluclations in phases, with some phases using all available cores, and others using only a single core at a time. This is also a common pattern, and one that limits the effective speed you can get from using multiple cores. Memory use, too, varies substantially during different phases of calculation.
+
+In the end, we can see that the most efficient process was quite efficient at over 90% CPU use, while the other processes are less efficient in practice, though this is expected. 
+
+Please remember that the CPU use is *not* ordered by process. The first process in the list is unlikely to be the same process from time step to time step. It is sinmple the most efficient process, whichever it may be. The summary at the end shows you how efficiently this job is able to use one core, a second core and so on. It does not show how efficient any single process has been. 
+
+This is an average across the entire running time; as we had phases with only a single core running, the averages for the second to last processes reflect that, even though they were very efficient when they did run. But what we care about here is how efficiently we use the resources overall, and how fast our job will finish, and this is a good measurement of that.
+
+
+
 
 **Measure "grep"**
 
@@ -68,17 +143,14 @@ ruse -st1 grep "To be or not to be" </dev/random
 We add the "-s" flag so it saves each intermediate measurement; and we set the time interval to 1 second with "-t1". We let this run for a few seconds, then interrupt it with ctrl-c:
 
 ```
-
-
    time         mem   processes  process usage
-   sses  process usage
   (secs)        (MB)  tot  used  (sorted, %CPU)
       0         2.0     1     0 
       1         2.0     1     1    7
       2         2.0     1     1   10
       3         2.0     1     1   14
       4         2.0     1     1    8
-...
+  ...
      14         2.0     1     1    7
      15         2.0     1     1    8
      16         2.0     1     1    6
@@ -127,11 +199,12 @@ The entire build took 282 seconds, or almost five minutes, and used a maximum of
 
 ## Build
 
-Ruse uses the GNU Autotools. In most cases you can simply run "configure", then "make" and "make install". You will need the Linux software development tools (gcc, library headers and so on), but it needs no external dependencies.
+Ruse uses the GNU Autotools. In most cases you can run "./autogen.sh" to create the configuration files, then run "configure", then "make" and "make install".  You will need the Linux software development tools (gcc, library headers, the GNU Autotools and so on), but it needs no external dependencies.
 
 Create a build directory. In that directory do 'configure', 'make' and 'make install:
 
 ```
+$ ./autogen.sh
 $ mkdir build
 $ cd build
 $ ./configure
@@ -142,23 +215,77 @@ Do './configure --help' to see the available options. In particular, you can use
 
 If you want to recreate the build files, you can run "autogen.sh" to do so. Then you can do 'configure', 'make' and 'make install as above.
 
-## Features
+## Options
 
-### Memory estimation
+*  -l LABEL, --label=LABEL  
+  
+  Ruse outputs a file named "\<name of program\>-\<PID\>.ruse" by default. If you don't want the name of the binary, you can set a different name here.
 
-There are (at least) two ways to measure the amount of memory used by a process: "RSS" (Resident Set Size) and "PSS" (Proportional Set Size). RSS counts the amount of physical memory actually used (not just allocated) by a process. This is a simple and fast measurement, but pessimistic, as it doesn't take into account memory shared by multiple processes. PSS takes shared memory areas into account, but to estimate it you have to go through each allocated memory block and sum up the values each time. This is slow; for a large process — hundreds of GB — this can take on the order of seconds.
+* --stdout           
+  
+  Print the output on screen instead of saving into a file. Good for debugging and testing.
 
-Because of the performance impact, Ruse defaults to RSS. This is a pessimistic estimation, but in most cases the actual difference is fairly small. The memory estimation is meant to be a lower bound for job allocation, so being pessimistic is not a bad thing. Also, for installations where [Slurm] uses RSS this is the best estimate. 
+* --no-header        
 
-You can use PSS by using the "--pss" option. You can also default to PSS at build time by passing "--enable-pss" to the configure invocation. Note again that this can have a significant performance impact; avoid using short time periods if you do this.
+  Don't print the header lines at the top of the file when printing each time step. This is good for when you want to read the output with a different program.
 
-### Process CPU usage
+* --no-summary       
 
-Ruse records the total number of processes and threads at each time step. It also records the amount of CPU each process used since the last step. Active processes are the ones with a non-zero amount of activity.
+  Don't print the summary info at the end. This is good when you just want to read the stepwise data with another program.
 
-At each time, the active process CPU use is sorted, optionally displayed, and added to the total. At the end, Ruse dismpays the peak number of total simultaneous processes; total active processes, and the average CPU use.
+  
+* -s, --steps  
 
-Note that we do not care *which* process did what in the display. The most active process may be different from time step to time step. We only care about the pattern of activity.
+  Print each sample step. Each line has the form:
+
+    Time(seconds)  Memory(MB)  total-processes  active-processes  sorted list of CPU use
+
+  Each value is separated by white space. The sorted list has as many elements as the number of active processes. If process information is turned off, this will print only time and memory.
+
+
+* -p, --procs            
+
+  Print process information. This finds the number of available cores; the total number of processes, the number of active processes and the CPU usage, in percent. 
+
+  * Total processes is the number of child processes and threads the application has at the timple of takign the sample. 
+
+  * Active processes are child processes and threads that have a non-zero CPU use during the previous sample period.
+  
+  * The process list is a list of active processes' CPU usage, in percent, sorted from highest to lowest. 
+
+  If the number of cores his higher than the number of active processes, the excess cores go unused. This generally means you have too many cores allocated.
+
+  If the number of cores is lower, then some of those active processes are sharing a core between them. This may well be fine, and an efficient use of resources. In other cases it can mean the job could benefit from more cores.
+
+
+* --no-procs         
+
+  Don't print process information. We still calculate it in the background; it is very efficient and there is little to gain by actively disabling it.
+
+
+* -t SECONDS, --time=SECONDS
+
+  Sample process and memory use every SECONDS. In general, a shorter interval may let you catch some transient events, or measure a short-running application. But it comes at the potential cost of higher overhead and of much longer result files. If you are only collecting the summary data there is little reason to change this value.
+
+* --rss              use RSS for memory estimation 
+  --pss              use PSS for memory estimation 
+
+  RSS and PSS  are two ways to measure the amount of memory used by a process. "RSS" (Resident Set Size) counts the amount of physical memory actually used (not just allocated) by a process. This is a simple and fast measurement, but it doesn't take into account memory shared among multiple processes. RSS tends to be pessimistic as a result.
+
+  PSS (Proportional Set Size) takes shared memory areas into account, making it more accurate. But to estimate it you have to go through each allocated memory block record and sum up the values. This is slow; for a large process that uses hundreds of GB this can take on the order of seconds.
+
+  Ruse defaults to RSS due to the performance impact. This is a pessimistic estimation, but in most cases the actual difference is fairly small. The memory estimation is meant to be a lower bound for job allocation, so being pessimistic is not really a problem. For clusters where [Slurm] uses RSS this is the best estimate. 
+
+You can enable PSS with the "--pss" option. You can default to PSS at build time by passing "--enable-pss" to the configure invocation. Again, note that this can have a significant performance impact; avoid using short time periods if you do this.
+
+
+
+* --help, --version
+
+  Display a short help text with the options, and show the version of Ruse.
+
+
+
 
 #### Interpret process usage
 
@@ -182,30 +309,95 @@ You will see a fair mumber of different patterns depending on the nature of the 
 
 ## FAQ
 
-#### Why is the sampling rate so low? 30 seconds is an eternity, and even 1 second misses a lot of events.
+#### Why is the sampling rate so low? 30 seconds is an eternity.
 
 Ruse is not meant to profile quick programs on your local computer. It's meant for compute clusters, where an individual job typically takes hours, days or weeks to finish. 
 
-And to run a job on a cluster you typically have to specify the resources — the number of nodes and cores, the amount of memory and the time — you will need ahead of time. You want to know the peak memory usage and time so you can ask for a sensible amount of these resources.
+When you run a job on a cluster you typically have to specify the resources — the number of nodes and cores, the amount of memory and the amount of time — you will need ahead of time. You neeed to know the peak memory usage, the number of cores you can use and the total time so you can ask for a sensible amount of these resources.
 
-Ruse uses 30 seconds by default because [Slurm] — the job scheduler we use — samples the resources used by jobs at that rate. We also limit it to no more than one sample per second to make sure Ruse itself does not significantly slow down the job.
+Ruse uses 30 seconds by default because [Slurm] — the job scheduler we use — samples the resources used by jobs at that rate. In practice, few applications will allocate and deallocate memory or threads so fast that we miss anything significant with a 30-second sample rate. 
 
-#### Doesn't Slurm already tell you how much memory you use?
+Our lower limit is 1 second. If you need finer granularity than that, we suggest it is time for you to break out a real profiler.
 
-Yes, [Slurm] can be configured to do that. But the data can be confusing or difficult to read, and you need to know a fair bit about how [Slurm] works to interpret the values correctly. This goes especially if your job has multiple subjobs, or uses MPI. Also, [Slurm] will not report the memory use of individual commands (unless you run them as subjobs) and will not give you a memory profile over time. 
+#### Doesn't Slurm already tell you how much resources you use?
 
-Ruse attempts to report the data in a way that is easy to interpret and use to create a job submission. 
+Yes, [Slurm] can be configured to show you the memory used. But the data is not simple to interpret unless you understand how [Slurm] works. This goes especially if your job has multiple subjobs, or uses MPI. Also, [Slurm] will not report the memory use of individual commands (unless you run them as subjobs) and will not give you a memory profile over time. 
+
+[Slurm] will not give you any information on the number of processes or their CPU usage. With modern high-core systems this is becoming more and more important to get right.
+
+Ruse attempts to report the data in a way that is easy to interpret and use to create a reasonable job submission. We also aim for Ruse to be lightweight enough that you can use it on production jobs without any performance penalty.
 
 #### How does Ruse measure memory use, exactly?
 
-Every sample interval, Ruse checks the process and all its subprocesses for the current "Resident Set Size" (RSS), and sums those values for the final result. It keeps track of the maximum over time and reports that at the end of the run. [Slurm] measures job memory use in the same way.
+By default, Ruse measures the RSS (Resident Set Size) each sample step. This is a simple and fast measurement that counts the amount of memory that is allocated and in use for the application. 
 
-This does mean it can count some memory multiple times. if your binary runs two processes that, say, both link to a shared library, then the memory used by that library code will be counted twice. There is another measure called "PSS" that does not count memory twice; shared memory is split among all processes that uses it. But this 
-is an unworkable measure in multi-user systems, as the actions of other users (starting or stopping processes that use that same shared memory) will affect the amount of memory your process is considered to use.
+However, in practice this is often an over-estimation. The Linux kernel is smart; if multiple processes all want to access the same data, Linux will only store it once, then let the processes share it. A very common case is shared libraries. 
+
+Almost all processes in a Linux system will link to a library called "libc", for instance. This library is about 2MB in size, and a Linux system easily has hundreds of processes running at once. If they all had their own copy in memory, you would use several hundred megabytes just for this one library. Instead, we have only a single (read-only) copy, and all processes on the system just use that. 
+
+RSS counts those 2MB of libc fully for each and every application. PSS (Proprtional Set Size) is an alternative that takes this into account. Linux keeps track of the number of processes that have allocated a given memory area, and can calculate the proportion of that memory "belonging to" any given process. If five processes all use one memory area, they would each be responsible for 1/5 of the total.
+
+The drawback is that to get the PSS for a process, you (as in, we or the kernel) have to go through each and every allocated memory area, look up how many processes have allocated this, then calculate the proportion owed by this process. A large application has thousands of separate memory areas, and in extreme cases estimating this calue can take seconds.
+
+Also, in practice this often doesn't matter much. For scientific applications, especially those that are memory hungry, shared data such as hared libraries is only a small fraction of the memory needed. The vast bulk is input data or intermediate data structures that are unique to the running process. That memory allocation doesn't differ between RSS and PSS.
+
+We default to using RSS for these reasons. It is far more efficient; it will tend to be pessimistic, so you won't go wrong using it as basis for your memory allocations; and in practice the difference is usually not large enough to worry about. 
+
+#### What's the deal with the process measurement?
+
+We are measuring the amount of CPU used for each process (including child processs and threads). A each step we collate these, and sort in descending order. This is added to a running total. At the end, the values are divided by the number of time steps to give you an average CPU use for each simultaneous process in the job.
+
+There are two things to keep in mind here:
+
+* We don't care about the identity of these processes. The first process CPU value at each time step is the value for whatever process happened to use the most CPU during that time step. The final total is the average of the most active process at each time step, whichever process that happened to be each time. 
+
+* We don't track *core* usage at all. Due to issues such as core migration it is not possible to get it reliably correct with a sampling approach such as this. You would need to use more intrusive profiling methods for that.
+
+This still tells you most of what you need to know. The percentage tells you how much CPU was used over time, and the number of simultaneous processes tell you the upper limit of the number of cores you could conceivably need.
+
+Let's you had a total that looks like this:
+
+```
+Cores:         4
+Total_procs:   4
+Used_procs:    4
+Proc(%): 90.0 65.0 40.0 33.3 
+```
+
+Your used processes equel the number of cores, and they are in fairly high use. You are making use of the cores you have allocated. It also looks like the third and fourth process is not contributing a huge amount, so increasing the number of cores is not that likely to help you very much.
+
+If you have something like this:
+
+```
+Cores:         4
+Total_procs:   2
+Used_procs:    1
+Proc(%): 75.0 
+```
+
+You have more cores than used processes. This tell you your application is not multithreaded. It can use only one core at a time, and allocating more is a waste of reasources. If it is supposed to use multiple cores, it's time to check the documentation or search online for how to enable that.
+
+Finally, with something like this:
+
+```
+Cores:         16
+Total_procs:   16
+Used_procs:    16
+Proc(%): 80.0 5.0 4.7 4.5 4.4 4.4 4.3 3.9 3.3 2.1 2.1 2.0 1.8 1.8 1.8 1.7  
+```
+
+One or a few processes are well-used, and the rest are used only very little. This tells you that your job can use multiple processes, but that these many - 16 - is probably too much. It's spending almost all its time on single-threaded processing, and only a small part of time actually running in parallel. You most likely want to reduce the number of cores to 8 or even less. You wuill lose very little time, and will free up resdources to, for instance, run another job like it in parallel.
 
 #### Any future plans for Ruse?
 
-Yes. I hope to add an estimation of CPU and core use over time as well. There's no specific timeline for that, though.
+We now have the ability to measure the process CPU use and to use RSS and PSS for memory estimation. This fulfils the plans I have had for Ruse up to this point, and I currently have no specific plans.
 
+A couple of possible future directions that could be interesting:
+
+* Find a non-intrusive, low-resource way to track core usage. I don't see a way to do that now.
+
+* Rewrite it in Rust :) No, seriously, I would have benefited from using Rust for this, and if I had started Ruse this year I probably would have. 
+
+I am open to any suggestions and patches!
 
 [Slurm]: https://slurm.schedmd.com/
