@@ -309,7 +309,7 @@ read_threads(int pid, pstruct *pstr) {
         add_thread(pstr, tnum, utime, core); 
 
     } // readdir
-
+    closedir(df);
     return true;
 }
 

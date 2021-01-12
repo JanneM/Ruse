@@ -87,6 +87,7 @@ create_pstruct() {
 	error(0, errno, "Failed to read '/proc/uptime'");
 	return NULL;
     }
+    fclose(f);
     pstr->ptime = atof(line);
     pstr->dtime = -1.0;
 
@@ -145,6 +146,7 @@ do_thread_iter(pstruct *pstr) {
 	error(0,errno, "Failed to read '/proc/uptime'");
 	return false;
     }
+    fclose(f);
 
     uptime = atof(line);
     pstr->dtime = uptime - pstr->ptime;
