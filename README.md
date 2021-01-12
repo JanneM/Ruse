@@ -100,9 +100,9 @@ We have 8 available cores; 9 processes in total; and at most 8 processes are act
 
 This application runs calculations in phases, with some phases using all available cores, and others using only a single core at a time. This pattern limits the effective speed you can get from using multiple cores. Memory use, too, varies substantially during different phases of calculation.
 
-The CPU use is *not* ordered by process. The processes may be completely different from one step to the next. Each step displays the CPU use of the active processes or threads sorted from most active to the least. The final average is the summed usage from each time step, divided by the number of steps. 
+The CPU use is *not* ordered by process. The processes may be completely different from one step to the next. Each step displays the CPU use of the active processes or threads sorted from most active to the least. The final average is the sum of each time step, divided by the number of steps. 
 
-This display doesn't tell you anything about the performance of specific processes. But it does tell us how efficiently we use the resources overall, and that's what we care about with Ruse.
+If the number of cores is at least equal to the number of active processes, the CPU use will be the same as usage per core. This doesn't tell you about the performance of specific processes, but it does tell us how efficiently we use the available cores overall, and that's what we care about with Ruse.
 
 
 ## Build
@@ -157,7 +157,7 @@ If you cloned the git repository and need to recreate the build files, you can r
 
   Print process information. This finds the number of available cores; the total number of processes, the number of active processes and the CPU usage, in percent. 
 
-  * Total processes is the number of child processes and threads the application has at the timple of takign the sample. 
+  * Total processes is the number of child processes and threads the application has at the time of taking the sample. 
 
   * Active processes are child processes and threads that have a non-zero CPU use during the previous sample period.
   
@@ -165,7 +165,7 @@ If you cloned the git repository and need to recreate the build files, you can r
 
   If the number of cores his higher than the number of active processes, the excess cores go unused. This generally means you have too many cores allocated.
 
-  If the number of cores is lower, then some of those active processes are sharing a core between them. This may well be fine, and an efficient use of resources. In other cases it can mean the job could benefit from more cores.
+  If the number of cores is lower, then some of those active processes are sharing a core between them. For some jobs that are IO bound this is fine, and an efficient use of resources. In other cases the job could benefit from more cores.
 
 
 * --no-procs         
@@ -195,26 +195,26 @@ If you cloned the git repository and need to recreate the build files, you can r
 
 ## FAQ
 
-#### Why is the sampling rate so low? 30 seconds is an eternity.
+#### Why is the sampling rate so low? 30 seconds is really long.
 
-Ruse is not meant to profile quick programs on your local computer. It's meant for compute clusters, where an individual job typically takes hours, days or weeks to finish. 
+Ruse is not meant to profile quick programs on your local computer. It's meant to help allocate resources on compute clusters, where an individual job often takes hours, days or weeks to finish. 
 
 When you run a job on a cluster you typically have to specify the resources — the number of nodes and cores, the amount of memory and the amount of time — you will need ahead of time. You neeed to know the peak memory usage, the number of cores you can make use of, and the total time so you can ask for a sensible amount of these resources.
 
 Ruse uses 30 seconds by default because [Slurm] — the most common job scheduler — samples the resources used by jobs at that rate. Also, few applications will allocate and deallocate memory or threads so fast that we miss anything significant with a 30-second sample rate.
 
-The lower sample limit is 1 second. If you need finer granularity than that, we suggest it is time for you to break out a real profiler.
+The lower sample limit is 1 second. With a faster rate, Ruse itself would start to take a non-trivial amount of CPU resources. If you need finer granularity than that, we suggest it is time for you to break out a real profiler.
 
 #### Doesn't Slurm already tell you how much resources you use?
 
-Yes, [Slurm] can be configured to show you the memory used. But the data is not simple to interpret unless you understand how [Slurm] works. This goes especially if your job has multiple subjobs, or uses MPI. Also, [Slurm] will not report the memory use of individual commands (unless you run them as subjobs) and will not give you a memory profile over time. 
+[Slurm] can be configured to show you the memory used. But the data is not simple to interpret unless you understand how [Slurm] works. This goes especially if your job has multiple subjobs, or uses MPI. 
 
-[Slurm] will also not give you any information on the number of processes or their CPU usage. With modern high-core systems this is becoming more and more important to get right.
+[Slurm] will not report the memory use of individual commands, and will not give you a memory profile over time. [Slurm] will also not give you any information on the number of processes or their CPU usage. With modern high-core systems core allocation is becoming important to get right.
 
 Ruse attempts to report the data in a way that is easy to interpret and use to create a reasonable job submission. We also aim for Ruse to be lightweight enough that you can use it on production jobs without any performance penalty.
 
 
-#### How does Ruse measure the memory use, exactly?
+#### How does Ruse measure the memory use?
 
 By default, Ruse measures the RSS (Resident Set Size) each sample step. This is a simple and fast measurement that counts the amount of memory that is allocated and in use for the application. 
 
@@ -226,7 +226,7 @@ RSS counts those 2MB of libc fully for each and every application. PSS (Proprtio
 
 To get the PSS for a process, you (or the kernel) have to go through each and every allocated memory area, look up how many processes have allocated this, then calculate the proportion owed by this process. A large application has thousands of separate memory areas, and in extreme cases estimating this calue can take seconds.
 
-Also, in practice this difference often doesn't matter much. For scientific applications, especially those that are memory hungry, shared data such libraries is only a small fraction of the memory needed. The vast bulk is input or working data structures that are unique to the running process. That memory isn't shared and doesn't differ between RSS and PSS.
+Also, in practice this difference often doesn't matter much. For scientific applications, especially those that are memory hungry, shared data such libraries is only a small fraction of the memory needed. The vast bulk of allocted memory is used for input or working data structures that are unique to the running process. That memory isn't shared and doesn't differ between RSS and PSS.
 
 We default to using RSS for these reasons. It is far more efficient; it will tend to be pessimistic, so you won't go wrong using it as basis for your memory allocations; and in practice the difference is usually not large enough to worry about. 
 
@@ -241,7 +241,7 @@ There are two things to keep in mind here:
 
 * We don't track *core* usage against processes at all. Due to issues such as core migration it is not possible to get it reliably correct with a sampling approach such as this. You would need to use more intrusive profiling methods for that.
 
-This still tells you most of what you need to know. The percentages tell you how much CPU was used over time, and the number of simultaneous processes tell you the upper limit of the number of cores you could conceivably need.
+In practice, unless you are overallocating processes, the process use will correspond to core usage, so this tells you most of what you need to know. The percentages tell you how much CPU was used over time, and the number of simultaneous processes tell you the upper limit of the number of cores you could conceivably need.
 
 Let's say you had a total that looks like this:
 
@@ -252,7 +252,7 @@ Avctive_procs:  4
 Proc(%): 90.0 65.0 40.0 33.3 
 ```
 
-Your used processes equel the number of cores, and they are in fairly high use. You are making use of the cores you have allocated. It also looks like the third and fourth process is not contributing a huge amount, so increasing the number of cores is not that likely to help you a lot.
+Your used processes equal the number of cores, and they are in moderate use. You are making use of the cores you have allocated. It also looks like the third and fourth process is not contributing a huge amount, so increasing the number of cores is not that likely to help you a lot.
 
 If you have something like this:
 
