@@ -46,6 +46,17 @@ then
 else
     AC_MSG_NOTICE([using RSS for memory estimation])
 fi
+AC_ARG_WITH([extras],
+	[AS_HELP_STRING([--with-extras], [Build extra utils useful for testing.])],
+	[],
+	[with_extras=no])
+
+AS_IF([test "x$with_extras" != xno],
+	[
+	AM_CONDITIONAL(WITH_EXTRAS, true)
+	], [
+	AM_CONDITIONAL(WITH_EXTRAS, false)
+	])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile

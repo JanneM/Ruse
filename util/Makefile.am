@@ -1,3 +1,4 @@
+if WITH_EXTRAS
 AM_CFLAGS = -std=gnu99 -Wall -O2 --openmp
 AM_LDFLAGS = -lm -lrt 
 
@@ -8,3 +9,4 @@ ruse_multiproc_SOURCES = ruse_multiproc.c \
 ruse_omp_SOURCES = ruse_omp.c \
 		   options_omp.c options_omp.h \
 		   do_task.c do_task.h
+endif
