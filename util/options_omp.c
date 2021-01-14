@@ -35,6 +35,7 @@ execution. Iterate for <iter> iterations.\n\
   -t, --time=SECONDS     Running time (5 seconds)\n\
   -s, --single=SECONDS   Single-thread time (0 seconds)\n\
   -i, --iter=N		 iterations (1)\n\
+  -m, --mem=MB           Allocated memory (10Mb)\n\
 \n\
       --busy             keep cores busy (default)\n\
       --idle             keep cores idle\n\
@@ -54,6 +55,7 @@ get_options(int *argc, char **argv[]) {
     opts->time    = 5;
     opts->single  = 0;
     opts->iter    = 1;
+    opts->mem     = 10;
 
     int c;
 
@@ -67,10 +69,11 @@ get_options(int *argc, char **argv[]) {
 	    {"iter",    no_argument,       0, 'i'},
 	    {"time",    required_argument, 0, 't'},
 	    {"single",  required_argument, 0, 's'},
+	    {"mem",    required_argument, 0, 'm'},
 	    {0,         0,                 0,  0 }
 	};
 
-	c = getopt_long(*argc, *argv, "+ht:p:i:s:",
+	c = getopt_long(*argc, *argv, "+ht:p:i:s:m:",
 		long_options, &option_index);
 	if (c == -1)
 	    break;
@@ -115,6 +118,14 @@ get_options(int *argc, char **argv[]) {
 		opts->iter = atoi(optarg);
 		if (opts->iter<1) {
 		    fprintf(stderr, "\nError: iterations must be positive\n\n");
+		    show_help((**argv));
+		    exit(EXIT_FAILURE);
+		}
+		break;
+	    case 'm':
+		opts->mem = atoi(optarg);
+		if (opts->mem<1) {
+		    fprintf(stderr, "\nError: mem must be a positive integer\n\n");
 		    show_help((**argv));
 		    exit(EXIT_FAILURE);
 		}

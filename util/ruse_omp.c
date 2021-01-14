@@ -86,7 +86,7 @@ main(int argc, char*argv[]) {
 	}
 	#pragma omp parallel for
 	for (int i=0; i<procs; i++) {
-	    char *mem = memalloc(10);
+	    char *mem = memalloc(opts->mem);
 	    do_task(opts->time, opts->busy);
 	    free(mem);    
 	}

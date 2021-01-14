@@ -39,6 +39,7 @@ typedef struct {
     bool busy;
     unsigned int procs;
     unsigned int iter;
+    unsigned int mem;
 } options;
 
 
