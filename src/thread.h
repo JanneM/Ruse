@@ -53,7 +53,8 @@ typedef struct {
     unsigned int iter;		    // iterations
    
     int jiffy;                      // jiffies. Not currently used
-    double ptime;                   // current time since start
+    double stime;                   // time at start
+    double ptime;                   // time at last iteration
     double dtime;                   // time since last iteration
 } pstruct;
 

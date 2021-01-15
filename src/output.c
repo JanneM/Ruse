@@ -60,7 +60,7 @@ print_steps(options *opts, size_t memory, pstruct *pstr, int ts) {
         if (opts->procs) {
                 fprintf(opts->fhandle, "%6d %5d ", pstr->nproc, pstr->proc_cur->len); 
                 for (int i=0; i < pstr->proc_cur->len; i++) {
-                    fprintf(opts->fhandle, "%4.0f", pstr->proc_cur->dlist[i]);
+                    fprintf(opts->fhandle, "%4.0f", pstr->proc_cur->dlist[i]/pstr->dtime);
                 }
         }
         fprintf(opts->fhandle, "\n");
@@ -118,7 +118,7 @@ print_summary(options *opts, size_t memory, pstruct *pstr, int ts) {
 	    fprintf(opts->fhandle, "Active_procs:%s%4d\n", pad, pstr->proc_acc->len);
             fprintf(opts->fhandle, "Proc(%%): ");
             for (int i=0; i < pstr->proc_acc->len; i++) {
-                fprintf(opts->fhandle, "%-6.1f", pstr->proc_acc->dlist[i]/pstr->iter);
+                fprintf(opts->fhandle, "%-6.1f", pstr->proc_acc->dlist[i]/(pstr->ptime - pstr->stime));
             }
             fprintf(opts->fhandle, "\n");
         }

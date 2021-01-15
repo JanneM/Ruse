@@ -185,11 +185,9 @@ main(int argc, char *argv[])
     }
 
     /* We're the parent */
-    pstr = create_pstruct();
-    maxmem = get_process_data(pid, pstr, opts->pss);
     print_header(opts);
-    print_steps(opts, maxmem, pstr, 0); 
     set_signals(opts->time);
+    pstr = create_pstruct();
 
     while(1) {
 

@@ -90,6 +90,7 @@ create_pstruct() {
     fclose(f);
     pstr->ptime = atof(line);
     pstr->dtime = -1.0;
+    pstr->stime = pstr->ptime;
 
     /* fill in hardware information */
     cpu_set_t cpumask;
@@ -197,7 +198,7 @@ add_thread(pstruct *pstr, pid_t pid, unsigned long utime, int core) {
      * since last iteration */
     if (pstr->dtime>0.0) {
 	if (udiff >0) {
-	    darr_insert(pstr->proc_cur, udiff/pstr->dtime);
+	    darr_insert(pstr->proc_cur, udiff);
 	}
     }
     pstr->nproc++;
