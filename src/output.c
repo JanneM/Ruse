@@ -41,7 +41,7 @@ void
 print_mem(options *opts, size_t mem) {
     
     int d = 1024;
-    char mstr[32];
+    char *mstr = (char *)calloc(32, sizeof(char));
     strncpy(mstr, "Memory:      ",31);
 
     /* not sure if we really want to do this. Leave it for now.
@@ -68,14 +68,13 @@ print_steps(options *opts, size_t memory, pstruct *pstr, int ts) {
     if (opts->steps) {
 	fprintf(opts->fhandle, "%7d %11.1f", ts, ((double)memory)/1024.0);
         if (opts->procs) {
-                fprintf(opts->fhandle, "%6d %5d ", pstr->nproc, pstr->proc_cur->len); 
-                for (int i=0; i < pstr->proc_cur->len; i++) {
-                    fprintf(opts->fhandle, "%4.0f", pstr->proc_cur->dlist[i]/pstr->dtime);
-                }
+            fprintf(opts->fhandle, "%6d %5d ", pstr->nproc, pstr->proc_cur->len); 
+            for (int i=0; i < pstr->proc_cur->len; i++) {
+                fprintf(opts->fhandle, "%4.0f", pstr->proc_cur->dlist[i]/pstr->dtime);
+            }
         }
         fprintf(opts->fhandle, "\n");
     }
-
     fflush(opts->fhandle);
 }
 
