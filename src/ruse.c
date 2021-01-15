@@ -211,7 +211,7 @@ main(int argc, char *argv[])
 	    }
 #ifdef TIMING   
 	    clock_gettime(CLOCK_REALTIME, &toc);
-	    printf("TIME: get data: %.2fms \ttotal: %.2fms\n", timing1, time_diff_micro(&toc, &tic)/1000.0);
+	    fprintf(opts->fhandle, "TIME: get data: %.2fms \ttotal: %.2fms\n", timing1, time_diff_micro(&toc, &tic)/1000.0);
 #endif
 	/* Child disappeared. Finish this. */ 
 	} else if (sigtype == SIGCHLD) {

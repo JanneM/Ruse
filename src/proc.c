@@ -85,6 +85,10 @@ read_pss_mem_slow(int pid, size_t *mem)
     char *fname;
     FILE *f;
 
+    /* we could be reading a non-existent process.
+     * give a sensible default. */
+    *mem = 0; 
+
     if ((res = asprintf(&fname, "/proc/%i/smaps", pid)) == -1) {
 	error(0,0, "Failed to convert smaps path\n");
 	return false;
@@ -129,6 +133,10 @@ read_pss_mem(int pid, size_t *mem) {
     char line[128];
     char *fname;
     FILE *f;
+    
+    /* we could be reading a non-existent process.
+     * give a sensible default. */
+    *mem = 0; 
 
     if ((res = asprintf(&fname, "/proc/%i/smaps_rollup", pid)) == -1) {
 	error(0,0, "Failed to convert smaps_rollup path\n");
@@ -172,6 +180,10 @@ read_rss_mem(int pid, size_t *mem) {
     char *field;
     char *fname;
     FILE *f;
+
+    /* we could be reading a non-existent process.
+     * give a sensible default. */
+    *mem = 0; 
 
     if((res = asprintf(&fname, "/proc/%i/stat", pid)) == -1) {
 	error(0,0, "Failed to convert proc file name\n");
@@ -380,7 +392,7 @@ size_t
 get_process_data_r(int pid, procdata *p, int l, pstruct *pstr, bool use_pss) {
     
     size_t mem=0;
-    size_t proc_mem;
+    size_t proc_mem=0;
 
     for (int i=0; i<l; i++) {
 	if (p[i].parent == pid) {
@@ -404,7 +416,7 @@ get_process_data(int pid, pstruct *pstr, bool use_pss) {
     iarr *plist;
     procdata *procs;
     size_t mem = 0;
-    size_t proc_mem;
+    size_t proc_mem = 0;
 
 
     if ((plist = get_all_pids()) == NULL) {
