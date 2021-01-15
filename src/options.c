@@ -41,7 +41,7 @@ To measure a command 'command', put 'ruse' in front\n\
   -s, --steps            Print each sample step\n\
   -p, --procs            Print process information (default)\n\
       --no-procs         Don't print process information\n\
-  -t, --time=SECONDS     Sample every SECONDS (default 30)\n\
+  -t, --time=SECONDS     Sample every SECONDS (default 10)\n\
 \n");
 #ifdef ENABLE_PSS
     printf("\
@@ -77,7 +77,7 @@ get_options(int *argc, char **argv[]) {
     opts->verbose = false;
     opts->steps   = false;
     opts->procs   = true;
-    opts->time    = 30;
+    opts->time    = 10;
     opts->nohead  = false;
     opts->nofile  = false;
     opts->nosum   = false;
