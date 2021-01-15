@@ -38,16 +38,26 @@ print_time(FILE *f, int ts) {
     fprintf(f, "%02d:%02d:%02d\n", h, m, s);
 }
 void
-print_mem(FILE *f, size_t mem) {
+print_mem(options *opts, size_t mem) {
     
     int d = 1024;
+    char mstr[32];
+    strncpy(mstr, "Memory:      ",31);
+
+    /* not sure if we really want to do this. Leave it for now.
+    if (opts->pss) {
+        strncpy(mstr, "Memory(PSS): ",31);
+    } else {
+        strncpy(mstr, "Memory(RSS): ",31);
+    }
+    */
     if (mem>(d*d*d)) {
-        fprintf(f, "Memory:         %.1f TB\n", (double)mem/(d*d*d));
+        fprintf(opts->fhandle, "%s   %.1f TB\n", mstr, (double)mem/(d*d*d));
     } else 
     if (mem>(d*d)) {
-        fprintf(f, "Memory:         %.1f GB\n", (double)mem/(d*d));
+        fprintf(opts->fhandle, "%s   %.1f GB\n", mstr, (double)mem/(d*d));
     } else { 
-        fprintf(f, "Memory:         %.1f MB\n", (double)mem/(d));
+        fprintf(opts->fhandle, "%s   %.1f MB\n", mstr, (double)mem/(d));
     }
 }
 
@@ -82,7 +92,7 @@ print_header(options *opts)
         fprintf(opts->fhandle, "\n");
 	fprintf(opts->fhandle, "  (secs)        (MB)  ");
 	if (opts->procs) {
-	    fprintf(opts->fhandle, "tot  actv (sorted, %%CPU)");
+	    fprintf(opts->fhandle, "tot  actv  (sorted, %%CPU)");
 	}
         fprintf(opts->fhandle, "\n");
         fflush(opts->fhandle);
@@ -98,8 +108,7 @@ print_summary(options *opts, size_t memory, pstruct *pstr, int ts) {
 	    fprintf(opts->fhandle, "\n");
 	}
         print_time(opts->fhandle, ts);
-        print_mem(opts->fhandle, memory); 
-//	fprintf(opts->fhandle, "Mem:   %-9.1f\n", ((double)memory)/1024.0);
+        print_mem(opts, memory); 
         if (opts->procs) {
 
             char pad[5] = "";
