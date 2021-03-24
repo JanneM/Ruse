@@ -24,8 +24,8 @@ Options are:
       --no-procs         Don't print process information
   -t, --time=SECONDS     Sample every SECONDS (default 30)
 
-      --rss              use RSS for memory estimation
-      --pss              use PSS for memory estimation (default)
+      --rss              use RSS for memory estimation (default)
+      --pss              use PSS for memory estimation
 
       --help             Print help
       --version          Display version
