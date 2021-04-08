@@ -22,12 +22,12 @@ Options are:
   -s, --steps            Print each sample step
   -p, --procs            Print process information (default)
       --no-procs         Don't print process information
-  -t, --time=SECONDS     Sample every SECONDS (default 30)
+  -t, --time=SECONDS     Sample every SECONDS (default 10)
 
       --rss              use RSS for memory estimation (default)
       --pss              use PSS for memory estimation
 
-      --help             Print help
+  -h, --help             Print help
       --version          Display version
 ```
 
