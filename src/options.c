@@ -173,21 +173,23 @@ get_options(int *argc, char **argv[]) {
 	exit(EXIT_FAILURE);
     }
 
-    /* do we support rapid PSS information (kernel 4.18+) */
-    char *fname;
-    int res;
-    FILE *f;
-    pid_t pid = getpid();
-    if ((res = asprintf(&fname, "/proc/%ld/smaps_rollup", (long)pid)) == -1) {
-        error(EXIT_FAILURE, 0, "failed to create file name string.\n");
-    }
+    if (opts->pss == true) {
+        /* do we support rapid PSS information (kernel 4.18+) */
+        char *fname;
+        int res;
+        FILE *f;
+        pid_t pid = getpid();
+        if ((res = asprintf(&fname, "/proc/%ld/smaps_rollup", (long)pid)) == -1) {
+            error(EXIT_FAILURE, 0, "failed to create file name string.\n");
+        }
 
-    if ((f = fopen(fname, "r"))==NULL) {
-        error(0, 0, "\n** Warning **\n\
-/proc/*/smaps_rollup not supported on this system.\n\
-Rapid PSS estimation not possible. Falling back on RSS.\n\
-To remove this message, use \"--rss\" or rebuild without PSS.\n\n");
-        opts->pss = false;
+        if ((f = fopen(fname, "r"))==NULL) {
+            error(0, 0, "\n** Warning **\n\
+    /proc/*/smaps_rollup not supported on this system.\n\
+    Rapid PSS estimation not possible. Falling back on RSS.\n\
+    To remove this message, use \"--rss\" or rebuild without PSS.\n\n");
+            opts->pss = false;
+        }
     }
 
     // point argv and argc to profiled program forwards
